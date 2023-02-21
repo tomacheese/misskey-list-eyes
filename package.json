@@ -1,0 +1,51 @@
+{
+  "name": "misskey-list-eyes",
+  "version": "1.0.0",
+  "main": "output/index.js",
+  "repository": "https://github.com/tomacheese/misskey-list-eyes",
+  "author": "Tomachi",
+  "license": "MIT",
+  "private": true,
+  "engines": {
+    "node": "18.x"
+  },
+  "devDependencies": {
+    "@types/node": "18.14.0",
+    "@typescript-eslint/eslint-plugin": "5.53.0",
+    "@typescript-eslint/parser": "5.53.0",
+    "@vercel/ncc": "0.36.1",
+    "axios": "1.3.3",
+    "cycle": "1.0.3",
+    "eslint": "8.34.0",
+    "eslint-config-prettier": "8.6.0",
+    "eslint-config-standard": "17.0.0",
+    "eslint-plugin-import": "2.27.5",
+    "eslint-plugin-n": "15.6.1",
+    "eslint-plugin-promise": "6.1.1",
+    "eslint-plugin-unicorn": "45.0.2",
+    "logform": "2.5.1",
+    "prettier": "2.8.4",
+    "puppeteer-core": "19.7.2",
+    "ts-node": "10.9.1",
+    "ts-node-dev": "2.0.0",
+    "typescript": "4.9.5",
+    "winston": "3.8.2",
+    "winston-daily-rotate-file": "4.7.1",
+    "yarn-run-all": "3.1.1"
+  },
+  "scripts": {
+    "start": "ts-node -r tsconfig-paths/register ./src/main.ts",
+    "dev": "ts-node-dev --poll -r tsconfig-paths/register ./src/main.ts",
+    "package": "run-s clean compile packing",
+    "packing": "ncc build ./dist/main.js -o output/",
+    "compile": "tsc -p .",
+    "clean": "rimraf dist output",
+    "lint": "run-p -c lint:prettier lint:eslint lint:tsc",
+    "lint:prettier": "prettier --check src",
+    "lint:eslint": "eslint . --ext ts,tsx",
+    "lint:tsc": "tsc",
+    "fix": "run-s fix:prettier fix:eslint",
+    "fix:eslint": "eslint . --ext ts,tsx --fix",
+    "fix:prettier": "prettier --write src"
+  }
+}
