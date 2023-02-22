@@ -82,8 +82,8 @@ async function main() {
       continue
     }
 
-    Notified.addNotified(noteId)
     if (isFirst) {
+      Notified.addNotified(noteId)
       continue
     }
 
@@ -109,6 +109,8 @@ async function main() {
       },
       imagePath
     )
+
+    Notified.addNotified(noteId)
   }
 
   logger.info('👋 Closing Puppeteer')
