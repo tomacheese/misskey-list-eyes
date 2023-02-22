@@ -87,27 +87,39 @@ async function main() {
       continue
     }
 
+    // リアクション分も含める関係上、投稿から5分以降のノートを通知する
+    const createdAt = new Date(note.createdAt)
+    const now = new Date()
+    const diff = now.getTime() - createdAt.getTime()
+    if (diff < 1000 * 60 * 5) {
+      logger.info(`⏭️ Skipped: ${noteId}`)
+      continue
+    }
+
     const url = `https://${instanceDomain}/notes/${noteId}`
 
-    logger.info('📷 Downloading image')
-    const imagePath = await downloadNotePreviewImage(
+    logger.info(`📷 Downloading image: ${url}`)
+    const result = await downloadNotePreviewImage(
       browser,
       instanceDomain,
       noteId
     )
-    if (!imagePath) {
+    const imagePath = result.imagePath
+    if (!result || !imagePath) {
       logger.warn(`📝 Failed to download image: ${url}`)
       continue
     }
 
     logger.info('📝 Send messages to Discord')
+
     await discord.sendMessage(
       '',
       {
         title: `👀 ${instanceDomain} で見る`,
         url
       },
-      imagePath
+      imagePath,
+      result.isCW || result.isNSFWImage
     )
 
     Notified.addNotified(noteId)

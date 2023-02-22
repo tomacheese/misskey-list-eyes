@@ -4,9 +4,7 @@ services:
   app:
     build: .
     volumes:
-      - type: bind
-        source: ./data
-        target: /data
+      - ./data:/data
     env_file:
       - .env
     init: true
