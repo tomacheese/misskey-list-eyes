@@ -68,8 +68,7 @@ export async function downloadNotePreviewImage(
 
   await page.screenshot({
     path: imagePath,
-    clip,
-    fullPage: true
+    clip
   })
 
   return imagePath
