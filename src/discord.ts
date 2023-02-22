@@ -70,7 +70,12 @@ export class DiscordApi {
     this.webhookUrl = webhookUrl
   }
 
-  async sendMessage(content: string, embed: DiscordEmbed, imagePath: string) {
+  async sendMessage(
+    content: string,
+    embed: DiscordEmbed,
+    imagePath: string,
+    isSpoiler = false
+  ) {
     const formData = new FormData()
     formData.append(
       'payload_json',
@@ -83,7 +88,7 @@ export class DiscordApi {
     const arraybuffer = fs.readFileSync(imagePath)
 
     formData.append('file', arraybuffer, {
-      filename: 'image.png',
+      filename: `${isSpoiler ? 'SPOILER_' : ''}image.png}`,
       contentType: 'image/png'
     })
     const response = await axios.post(this.webhookUrl, formData, {
