@@ -70,7 +70,12 @@ export class DiscordApi {
     this.webhookUrl = webhookUrl
   }
 
-  async sendMessage(content: string, embed: DiscordEmbed, imagePath: string, isSpoiler = false) {
+  async sendMessage(
+    content: string,
+    embed: DiscordEmbed,
+    imagePath: string,
+    isSpoiler = false
+  ) {
     const formData = new FormData()
     formData.append(
       'payload_json',
