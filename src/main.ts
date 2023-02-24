@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { Browser } from 'puppeteer-core'
 import { DiscordApi } from './discord'
 import { Logger } from './logger'
 import { NotesUserListTimelineResponse } from './misskey'
@@ -57,81 +58,89 @@ async function main() {
   const logger = Logger.configure('main')
   logger.info('✨ main()')
 
-  logger.info('🔎 Check environment variables')
-  checkEnvironment()
+  let browser: Browser | null = null
 
-  const environment: IEnvironment = process.env as IEnvironment
-  const instanceDomain = environment.INSTANCE_DOMAIN
+  try {
+    logger.info('🔎 Check environment variables')
+    checkEnvironment()
 
-  const discord = new DiscordApi(environment.DISCORD_WEBHOOK_URL)
-  const isFirst = Notified.isFirst()
-  logger.info(`📝 isFirst: ${isFirst}`)
+    const environment: IEnvironment = process.env as IEnvironment
+    const instanceDomain = environment.INSTANCE_DOMAIN
 
-  logger.info('🚀 Launch Puppeteer')
-  const browser = await initPuppeteerBrowser()
+    const discord = new DiscordApi(environment.DISCORD_WEBHOOK_URL)
+    const isFirst = Notified.isFirst()
+    logger.info(`📝 isFirst: ${isFirst}`)
 
-  logger.info('📝 Get list timeline')
-  const notes = await getUserListTimeline(
-    environment.API_ACCESS_TOKEN,
-    environment.LIST_ID
-  )
+    logger.info('🚀 Launch Puppeteer')
+    browser = await initPuppeteerBrowser()
 
-  for (const note of notes.reverse()) {
-    const noteId = note.id
-    if (Notified.isNotified(noteId)) {
-      continue
-    }
+    logger.info('📝 Get list timeline')
+    const notes = await getUserListTimeline(
+      environment.API_ACCESS_TOKEN,
+      environment.LIST_ID
+    )
 
-    if (isFirst) {
+    for (const note of notes.reverse()) {
+      const noteId = note.id
+      if (Notified.isNotified(noteId)) {
+        continue
+      }
+
+      if (isFirst) {
+        Notified.addNotified(noteId)
+        continue
+      }
+
+      // リアクション分も含める関係上、投稿から5分以降のノートを通知する
+      const createdAt = new Date(note.createdAt)
+      const now = new Date()
+      const diff = now.getTime() - createdAt.getTime()
+      if (diff < 1000 * 60 * 5) {
+        logger.info(`⏭️ Skipped: ${noteId}`)
+        continue
+      }
+
+      const url = `https://${instanceDomain}/notes/${noteId}`
+
+      logger.info(`📷 Downloading image: ${url}`)
+      const result = await downloadNotePreviewImage(
+        browser,
+        instanceDomain,
+        noteId
+      )
+      const imagePath = result.imagePath
+      if (!result || !imagePath) {
+        logger.warn(`📝 Failed to download image: ${url}`)
+        continue
+      }
+
+      logger.info('📝 Send messages to Discord')
+
+      await discord.sendMessage(
+        '',
+        {
+          title: `👀 ${instanceDomain} で見る`,
+          url
+        },
+        imagePath,
+        result.isCW || result.isNSFWImage
+      )
+
       Notified.addNotified(noteId)
-      continue
     }
-
-    // リアクション分も含める関係上、投稿から5分以降のノートを通知する
-    const createdAt = new Date(note.createdAt)
-    const now = new Date()
-    const diff = now.getTime() - createdAt.getTime()
-    if (diff < 1000 * 60 * 5) {
-      logger.info(`⏭️ Skipped: ${noteId}`)
-      continue
+  } catch (error) {
+    logger.error('Error', error as Error)
+  } finally {
+    if (browser) {
+      logger.info('👋 Closing Puppeteer')
+      await browser.close()
     }
-
-    const url = `https://${instanceDomain}/notes/${noteId}`
-
-    logger.info(`📷 Downloading image: ${url}`)
-    const result = await downloadNotePreviewImage(
-      browser,
-      instanceDomain,
-      noteId
-    )
-    const imagePath = result.imagePath
-    if (!result || !imagePath) {
-      logger.warn(`📝 Failed to download image: ${url}`)
-      continue
-    }
-
-    logger.info('📝 Send messages to Discord')
-
-    await discord.sendMessage(
-      '',
-      {
-        title: `👀 ${instanceDomain} で見る`,
-        url
-      },
-      imagePath,
-      result.isCW || result.isNSFWImage
-    )
-
-    Notified.addNotified(noteId)
   }
-
-  logger.info('👋 Closing Puppeteer')
-  await browser.close()
 }
 
 ;(async () => {
   const logger = Logger.configure('main')
   await main().catch((error) => {
-    logger.error(error)
+    logger.error('Error', error)
   })
 })()
