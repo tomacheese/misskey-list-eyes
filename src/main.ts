@@ -116,14 +116,18 @@ async function main() {
 
       logger.info('📝 Send messages to Discord')
 
+      const isSpoiler = result.isCW || result.isNSFWImage
       await discord.sendMessage(
         '',
         {
           title: `👀 ${instanceDomain} で見る`,
-          url
+          url,
+          image: {
+            url: `attachment://${isSpoiler ? 'SPOILER_' : ''}image.png`
+          }
         },
         imagePath,
-        result.isCW || result.isNSFWImage
+        isSpoiler
       )
 
       Notified.addNotified(noteId)
