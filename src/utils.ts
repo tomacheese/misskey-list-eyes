@@ -1,6 +1,6 @@
 import puppeteer, { Browser, Page } from 'puppeteer-core'
 import fs from 'node:fs'
-import { Logger } from './logger'
+import { Logger } from '@book000/node-utils'
 
 export async function initPuppeteerBrowser() {
   const puppeteerArguments = [

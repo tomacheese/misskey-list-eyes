@@ -10,12 +10,12 @@
     "node": "18.x"
   },
   "devDependencies": {
+    "@book000/node-utils": "1.0.4",
     "@types/node": "18.14.6",
     "@typescript-eslint/eslint-plugin": "5.54.1",
     "@typescript-eslint/parser": "5.54.1",
     "@vercel/ncc": "0.36.1",
     "axios": "1.3.4",
-    "cycle": "1.0.3",
     "eslint": "8.35.0",
     "eslint-config-prettier": "8.7.0",
     "eslint-config-standard": "17.0.0",
@@ -24,14 +24,11 @@
     "eslint-plugin-promise": "6.1.1",
     "eslint-plugin-unicorn": "46.0.0",
     "form-data": "4.0.0",
-    "logform": "2.5.1",
     "prettier": "2.8.4",
     "puppeteer-core": "19.7.3",
     "ts-node": "10.9.1",
     "ts-node-dev": "2.0.0",
     "typescript": "4.9.5",
-    "winston": "3.8.2",
-    "winston-daily-rotate-file": "4.7.1",
     "yarn-run-all": "3.1.1"
   },
   "scripts": {
