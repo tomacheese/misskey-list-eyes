@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { Browser } from 'puppeteer-core'
 import { DiscordApi } from './discord'
-import { Logger } from './logger'
+import { Logger } from '@book000/node-utils'
 import { NotesUserListTimelineResponse } from './misskey'
 import { Notified } from './notified'
 import { downloadNotePreviewImage, initPuppeteerBrowser } from './utils'

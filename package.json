@@ -10,6 +10,7 @@
     "node": "18.x"
   },
   "devDependencies": {
+    "@book000/node-utils": "1.0.4",
     "@types/node": "18.14.6",
     "@typescript-eslint/eslint-plugin": "5.54.1",
     "@typescript-eslint/parser": "5.54.1",
