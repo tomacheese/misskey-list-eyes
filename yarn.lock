@@ -23,10 +23,10 @@
     chalk "^2.0.0"
     js-tokens "^4.0.0"
 
-"@book000/node-utils@1.1.0":
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/@book000/node-utils/-/node-utils-1.1.0.tgz#eb6c009add552deae4e31bdbac73b969bbec4f59"
-  integrity sha512-aY78HWfuNsUWXZsdXcw2uMab1uUYR3KZkw8eWBegmM8vluL5MvMcl7fn/tV56ExBHodbkkUhGoFe3CXoYozr5A==
+"@book000/node-utils@1.1.1":
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/@book000/node-utils/-/node-utils-1.1.1.tgz#69a3a8e2cda79466dd54e528d6869bc1c50f7b78"
+  integrity sha512-3zqzwzg0mFsxEmjs2ViYSvglmoSQxEUdur4gKmEa2SYpTZ9DQjwksZQiP+CnuCcIBguQa2iXkNeU6DtzQeM7LQ==
   dependencies:
     cycle "1.0.3"
     jsonc-parser "3.2.0"
