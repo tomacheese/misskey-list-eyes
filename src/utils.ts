@@ -27,9 +27,9 @@ export async function initPuppeteerBrowser() {
 
 async function waitForNoteElement(page: Page, noteId: string) {
   const logger = Logger.configure(`waitForNoteElement:${noteId}`)
-  // div.noteが出てくるのを10秒待って、出てこなかったらリロード + リトライ
+  // div.contents articleが出てくるのを10秒待って、出てこなかったらリロード + リトライ
   await page
-    .waitForSelector('div.note', {
+    .waitForSelector('div.contents article', {
       timeout: 10_000
     })
     .catch(async () => {
@@ -37,7 +37,7 @@ async function waitForNoteElement(page: Page, noteId: string) {
       await page.reload()
     })
 
-  await page.waitForSelector('div.note').finally(async () => {
+  await page.waitForSelector('div.contents article').finally(async () => {
     const imageFullPath = `/data/${noteId}.full.png`
     await page.screenshot({
       path: imageFullPath,
@@ -46,30 +46,18 @@ async function waitForNoteElement(page: Page, noteId: string) {
   })
 }
 
-async function removeReplyElements(page: Page) {
-  // div.reply の削除
-  await page.evaluate(() => {
-    const elements = document.querySelectorAll('div.reply')
-    // eslint-disable-next-line unicorn/no-array-for-each
-    elements.forEach((element) => {
-      element.remove()
-    })
-  })
-}
-
 async function isContentWarning(page: Page) {
-  // div.body > p.cw があるかどうかで判定する
-
-  return (await page.$('div.body > p.cw')) != null
+  // div.contents article button.xd2wm があるかどうかで判定する
+  return (await page.$('div.contents article button.xd2wm')) != null
 }
 
 async function showContentWarning(page: Page) {
   await page
-    .waitForSelector('div.body > div.content[style="display: none;"]')
+    .waitForSelector('div.contents article button.xd2wm')
     .then((element) =>
       // display: none;を削除する
       page.evaluate((element) => {
-        ;(element as HTMLElement).removeAttribute('style')
+        ;(element as HTMLElement).dispatchEvent(new Event('mousedown'))
       }, element)
     )
     // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -77,26 +65,20 @@ async function showContentWarning(page: Page) {
 }
 
 async function isNSFW(page: Page) {
-  // アプローチとして微妙な気がするが、style="filter: brightness(0.5);" があるかどうかで判定する
-  return (
-    (await page.$(
-      'div.content div.image > div[style="filter: brightness(0.5);"]'
-    )) != null
-  )
+  // とりあえず、div.xuA87.xesxEがあるかどうかで判定する。多分変わるだろうと思うから適宜
+  return (await page.$('div.xuA87.xesxE')) != null
 }
 
 async function showNSFW(page: Page) {
   await page
-    .waitForSelector(
-      'div.content div.image > div[style="filter: brightness(0.5);"]'
-    )
+    .waitForSelector('div.xuA87.xesxE')
     .then((element) => element?.click())
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     .catch(() => {})
 
   // 画像が開いてしまうので、閉じる
   await page
-    .waitForSelector('div.pswp.pswp--open')
+    .waitForSelector('button.pswp__button--close')
     .then((element) => element?.click())
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     .catch(() => {})
@@ -115,7 +97,7 @@ async function captureNote(page: Page, noteId: string) {
 
     const { width, height, top: y, left: x } = element.getBoundingClientRect()
     return { width, height, x, y }
-  }, 'div.note > div.note')
+  }, 'div.contents article')
 
   if (!clip) {
     return null
@@ -165,9 +147,6 @@ export async function downloadNotePreviewImage(
     logger.info('✨ Show NSFW')
     await showNSFW(page)
   }
-
-  logger.info('✨ Remove reply elements')
-  await removeReplyElements(page)
 
   logger.info('✨ Capture note screenshot')
   return {
