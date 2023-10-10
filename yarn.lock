@@ -33,10 +33,10 @@
     chalk "^2.0.0"
     js-tokens "^4.0.0"
 
-"@book000/node-utils@1.6.19":
-  version "1.6.19"
-  resolved "https://registry.yarnpkg.com/@book000/node-utils/-/node-utils-1.6.19.tgz#d6b624d7be17416b1eef9c07d7ba3f78f03507b3"
-  integrity sha512-dNxw+J3F4qKEid6oWQxJBRiQnM8mdd1qO4rOQxAIpDvths0h2DpavlVY/nnyYdukS8G69Ef6Rbn4wrjqHhV3Vw==
+"@book000/node-utils@1.6.20":
+  version "1.6.20"
+  resolved "https://registry.yarnpkg.com/@book000/node-utils/-/node-utils-1.6.20.tgz#f24134f8470cb4d7e65e0b217db357686e63913b"
+  integrity sha512-miVNgAhYsHHZ9DEhlHdSYjZcd701M689sZ+4lEZo5JmOe1GghPTvMmWoWspXXvNhD9hRWH12r2N73TzIy7WAiQ==
   dependencies:
     axios "1.5.1"
     cycle "1.0.3"
