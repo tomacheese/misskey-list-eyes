@@ -7,7 +7,7 @@
   "license": "MIT",
   "private": true,
   "devDependencies": {
-    "@book000/node-utils": "1.12.94",
+    "@book000/node-utils": "1.12.95",
     "@types/node": "20.11.29",
     "@typescript-eslint/eslint-plugin": "7.2.0",
     "@typescript-eslint/parser": "7.2.0",
