@@ -109,7 +109,7 @@ async function main() {
         noteId
       )
       const imagePath = result.imagePath
-      if (!result || !imagePath) {
+      if (!imagePath) {
         logger.warn(`📝 Failed to download image: ${url}`)
         continue
       }
@@ -144,7 +144,7 @@ async function main() {
 
 ;(async () => {
   const logger = Logger.configure('main')
-  await main().catch((error) => {
-    logger.error('Error', error)
+  await main().catch((error: unknown) => {
+    logger.error('Error', error as Error)
   })
 })()
