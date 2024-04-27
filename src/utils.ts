@@ -37,12 +37,16 @@ async function waitForNoteElement(page: Page, noteId: string) {
       await page.reload()
     })
 
-  await page.waitForSelector('div.contents article').finally(async () => {
+  await page.waitForSelector('div.contents article').finally(() => {
     const imageFullPath = `/data/${noteId}.full.png`
-    await page.screenshot({
-      path: imageFullPath,
-      fullPage: true
-    })
+    page
+      .screenshot({
+        path: imageFullPath,
+        fullPage: true
+      })
+      .catch(() => {
+        logger.error(`🚨 Failed to capture full page screenshot`)
+      })
   })
 }
 

@@ -19,13 +19,9 @@ export interface User {
   badgeRoles: BadgeRole[]
 }
 
-export interface Reactions {
-  [key: string]: number
-}
+export type Reactions = Record<string, number>;
 
-export interface ReactionEmojis {
-  [key: string]: string
-}
+export type ReactionEmojis = Record<string, string>;
 
 export interface User2 {
   id: string
