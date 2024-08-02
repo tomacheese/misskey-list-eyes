@@ -1,4 +1,4 @@
-FROM node:21-alpine as builder
+FROM node:21-alpine AS builder
 
 WORKDIR /app
 
@@ -13,7 +13,7 @@ COPY tsconfig.json .
 
 RUN yarn package
 
-FROM zenika/alpine-chrome:with-puppeteer-xvfb as runner
+FROM zenika/alpine-chrome:with-puppeteer-xvfb AS runner
 
 # hadolint ignore=DL3002
 USER root
@@ -36,11 +36,11 @@ COPY --from=builder /app/output .
 COPY entrypoint.sh .
 RUN chmod +x entrypoint.sh
 
-ENV TZ Asia/Tokyo
-ENV DISPLAY :99
-ENV NODE_ENV production
-ENV CHROMIUM_PATH /usr/bin/chromium-browser
-ENV NOTIFIED_PATH /data/notified.json
+ENV TZ=Asia/Tokyo
+ENV DISPLAY=:99
+ENV NODE_ENV=production
+ENV CHROMIUM_PATH=/usr/bin/chromium-browser
+ENV NOTIFIED_PATH=/data/notified.json
 
 ENTRYPOINT ["tini", "--"]
 CMD ["/app/entrypoint.sh"]
