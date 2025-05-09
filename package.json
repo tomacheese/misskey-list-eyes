@@ -24,7 +24,7 @@
   "devDependencies": {
     "@book000/eslint-config": "1.8.65",
     "@book000/node-utils": "1.15.13",
-    "@types/node": "22.15.9",
+    "@types/node": "22.15.12",
     "@vercel/ncc": "0.38.3",
     "axios": "1.9.0",
     "eslint": "9.26.0",
