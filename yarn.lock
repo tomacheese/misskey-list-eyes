@@ -22,10 +22,10 @@
     globals "16.1.0"
     typescript-eslint "8.32.0"
 
-"@book000/node-utils@1.15.21":
-  version "1.15.21"
-  resolved "https://registry.yarnpkg.com/@book000/node-utils/-/node-utils-1.15.21.tgz#59e9e57bb267da511be097725e4a35c59a8515ce"
-  integrity sha512-jobb3ZtFv1B3oZGQ7XDlMFezhxoEGIgYbrXBLsTRXyuYEYB0q+tY8pLhhCrJtOpWY65nZIV3OS0DnPNvqYq1nw==
+"@book000/node-utils@1.15.23":
+  version "1.15.23"
+  resolved "https://registry.yarnpkg.com/@book000/node-utils/-/node-utils-1.15.23.tgz#2e273aa2cfc90d75105f4410e294bc5faa97fff4"
+  integrity sha512-XQxs9Pp86UwPZrD/0RlpWXgvrfT8KXpAsKzOaIjXB+iLAIKIY9v5xGqKs4lzeDrLQH3vlhJ5Cg9mc3gx/L/p8g==
   dependencies:
     axios "1.9.0"
     cycle "1.0.3"
@@ -263,14 +263,7 @@
   resolved "https://registry.yarnpkg.com/@types/json5/-/json5-0.0.29.tgz#ee28707ae94e11d2b827bcbe5270bcea7f3e71ee"
   integrity sha512-dRLjCWHYg4oaA77cxO64oO+7JwCwnIzkZPdrrC71jQmQtlhM556pwKo5bUzqvZndkVbeFLIIi+9TC40JNF5hNQ==
 
-"@types/node@*":
-  version "22.15.17"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-22.15.17.tgz#355ccec95f705b664e4332bb64a7f07db30b7055"
-  integrity sha512-wIX2aSZL5FE+MR0JlvF87BNVrtFWf6AE6rxSE9X7OwnVvoyCQjpzSRJ+M87se/4QCkCiebQAqrJ0y6fwIyi7nw==
-  dependencies:
-    undici-types "~6.21.0"
-
-"@types/node@22.15.17":
+"@types/node@*", "@types/node@22.15.17":
   version "22.15.17"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-22.15.17.tgz#355ccec95f705b664e4332bb64a7f07db30b7055"
   integrity sha512-wIX2aSZL5FE+MR0JlvF87BNVrtFWf6AE6rxSE9X7OwnVvoyCQjpzSRJ+M87se/4QCkCiebQAqrJ0y6fwIyi7nw==
