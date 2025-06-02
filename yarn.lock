@@ -269,10 +269,10 @@
   dependencies:
     undici-types "~6.21.0"
 
-"@types/node@22.15.25":
-  version "22.15.25"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-22.15.25.tgz#99642ee87225b34be98490248dfb042a3ea650d8"
-  integrity sha512-RJCAZ1E7JgMDJRnyVwIvlnKnNa0oHXrgSeq5aoXdhxCOSuwCe9sccKnngOJq8GuukzSf45u4VeD0JxUXfC3Dwg==
+"@types/node@22.15.26":
+  version "22.15.26"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-22.15.26.tgz#01ea4427edeaf205cd18ebdb93db2708d5301f05"
+  integrity sha512-lgISkNrqdQ5DAzjBhnDNGKDuXDNo7/1V4FhNzsKREhWLZTOELQAptuAnJMzHtUl1qyEBBy9lNBKQ9WjyiSloTw==
   dependencies:
     undici-types "~6.21.0"
 
