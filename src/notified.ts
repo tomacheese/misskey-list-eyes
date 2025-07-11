@@ -2,7 +2,6 @@ import fs from 'node:fs'
 
 const NOTIFIED_PATH = process.env.NOTIFIED_PATH ?? 'data/notified.json'
 
-// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class Notified {
   public static isFirst(): boolean {
     return !fs.existsSync(NOTIFIED_PATH)
