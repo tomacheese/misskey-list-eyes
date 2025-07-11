@@ -38,7 +38,7 @@ async function waitForNoteElement(page: Page, noteId: string) {
     })
 
   await page.waitForSelector('div.contents article').finally(() => {
-    const imageFullPath = `/data/${noteId}.full.png`
+    const imageFullPath = `/data/${noteId}.full.png` as const
     page
       .screenshot({
         path: imageFullPath,
@@ -89,7 +89,7 @@ async function showNSFW(page: Page) {
 }
 
 async function captureNote(page: Page, noteId: string) {
-  const imagePath = `/tmp/${noteId}.png`
+  const imagePath = `/tmp/${noteId}.png` as const
 
   // スクショを撮る範囲の計算
   const clip = await page.evaluate((s) => {
