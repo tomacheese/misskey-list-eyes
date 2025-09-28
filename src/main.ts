@@ -80,7 +80,7 @@ async function main() {
       environment.LIST_ID
     )
 
-    for (const note of notes.reverse()) {
+    for (const note of notes.toReversed()) {
       const noteId = note.id
       if (Notified.isNotified(noteId)) {
         continue
