@@ -22,14 +22,14 @@
     globals "16.5.0"
     typescript-eslint "8.46.4"
 
-"@book000/node-utils@1.18.161":
-  version "1.18.161"
-  resolved "https://registry.yarnpkg.com/@book000/node-utils/-/node-utils-1.18.161.tgz#843101490d8ce4ac003c06a55f4e89e77551ac95"
-  integrity sha512-9By0ogxrKVqZwj/szGBAc1ymHtWTPb02iucT+R0crSMuXnuloMk798aU/xr6vzAYmaKfELjM5nRHpgp4ABTxow==
+"@book000/node-utils@1.18.162":
+  version "1.18.162"
+  resolved "https://registry.yarnpkg.com/@book000/node-utils/-/node-utils-1.18.162.tgz#b64d381b10aa0e9ba83dc82f5330e6445974c977"
+  integrity sha512-QFP8/CFwKCtXR5GDWt2EFZpqKzFMFaVdV8fR8683D7Z5JySW44MFPnv/I4a497iiHCSEPfkTRqmJ5lLeEvRk0Q==
   dependencies:
     axios "1.13.2"
     cycle "1.0.3"
-    form-data "4.0.4"
+    form-data "4.0.5"
     jsonc-parser "3.3.1"
     moment-timezone "0.6.0"
     winston "3.18.3"
