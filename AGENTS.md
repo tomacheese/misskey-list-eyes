@@ -25,3 +25,4 @@
 - ログに機密情報を出力しない。
 
 ## リポジトリ固有
+- 目的: [Misskey](https://misskey-hub.net) に投稿されたノートをリスト機能を用いて収集し、Discord Webhook を用いて通知します。

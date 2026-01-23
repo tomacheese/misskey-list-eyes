@@ -41,3 +41,4 @@ yarn install
 ## ドキュメント更新
 
 ## リポジトリ固有
+- 目的: [Misskey](https://misskey-hub.net) に投稿されたノートをリスト機能を用いて収集し、Discord Webhook を用いて通知します。
