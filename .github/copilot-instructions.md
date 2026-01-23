@@ -41,4 +41,9 @@ yarn install
 ## ドキュメント更新
 
 ## リポジトリ固有
-- 目的: [Misskey](https://misskey-hub.net) に投稿されたノートをリスト機能を用いて収集し、Discord Webhook を用いて通知します。
+- 概要: Collect notes in Misskey and notify to Discord
+- 主要言語: TypeScript
+- パッケージマネージャー: yarn
+- 主なエントリポイント: `src/main.ts`
+- CI 定義: `.github/workflows/` を参照
+- 実行環境: `Dockerfile` と `docker-compose.yml` を使用
