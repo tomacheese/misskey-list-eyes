@@ -20,7 +20,7 @@
 ## コーディング規約
 - **コメント**: 日本語
 - **エラーメッセージ**: 英語
-- **TypeScript**: `skipLibCheck` 禁止、docstring (JSDoc) 必須。
+- **TypeScript**: `skipLibCheck` 禁止。関数やインターフェースには JSDoc 形式の docstring を日本語で記載することを推奨（新規追加時は付与）。
 
 ## 開発コマンド
 ```bash
@@ -45,4 +45,4 @@ yarn fix
 - Puppeteer の動作環境に依存することに注意する。
 
 ## リポジトリ固有事項
-- 通知済みノートは `notified.json` (デフォルト) 等で管理されている可能性があるため、`src/notified.ts` の実装を確認すること。
+- 通知済みノートは `data/notified.json`（デフォルト、`NOTIFIED_PATH` 環境変数で上書き可能）で管理されているため、実際の挙動は `src/notified.ts` の実装を確認すること。
