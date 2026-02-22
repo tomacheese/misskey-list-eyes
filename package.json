@@ -34,7 +34,7 @@
     "eslint-plugin-promise": "7.2.1",
     "form-data": "4.0.5",
     "prettier": "3.8.1",
-    "puppeteer-core": "24.37.4",
+    "puppeteer-core": "24.37.5",
     "ts-node": "10.9.2",
     "ts-node-dev": "2.0.0",
     "typescript": "5.9.3",
