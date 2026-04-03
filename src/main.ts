@@ -132,8 +132,8 @@ async function main() {
 
       Notified.addNotified(noteId)
     }
-  } catch (error) {
-    logger.error('Error', error as Error)
+  } catch (err) {
+    logger.error('Error', err as Error)
   } finally {
     if (browser) {
       logger.info('👋 Closing Puppeteer')
@@ -144,7 +144,7 @@ async function main() {
 
 ;(async () => {
   const logger = Logger.configure('main')
-  await main().catch((error: unknown) => {
-    logger.error('Error', error as Error)
+  await main().catch((err: unknown) => {
+    logger.error('Error', err as Error)
   })
 })()
