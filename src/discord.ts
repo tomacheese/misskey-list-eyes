@@ -1,5 +1,3 @@
-import axios from 'axios'
-import FormData from 'form-data'
 import fs from 'node:fs'
 
 export interface DiscordEmbedFooter {
@@ -79,23 +77,29 @@ export class DiscordApi {
     const formData = new FormData()
     formData.append(
       'payload_json',
-      JSON.stringify({
-        content,
-        embeds: [embed]
-      })
+      new Blob(
+        [
+          JSON.stringify({
+            content,
+            embeds: [embed]
+          })
+        ],
+        { type: 'application/json' }
+      )
     )
 
     const arraybuffer = fs.readFileSync(imagePath)
-
-    formData.append('file', arraybuffer, {
-      filename: `${isSpoiler ? 'SPOILER_' : ''}image.png`,
-      contentType: 'image/png'
+    formData.append(
+      'file',
+      new Blob([arraybuffer]),
+      `${isSpoiler ? 'SPOILER_' : ''}image.png`
+    )
+    const res = await fetch(this.webhookUrl, {
+      method: 'POST',
+      body: formData
     })
-    const response = await axios.post(this.webhookUrl, formData, {
-      headers: formData.getHeaders()
-    })
-    if (response.status !== 200) {
-      throw new Error(`Failed to send message to Discord: ${response.status}`)
+    if (!res.ok) {
+      throw new Error(`Failed to send message to Discord: ${res.status}`)
     }
   }
 }
