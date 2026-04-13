@@ -1,4 +1,3 @@
-// axios 削除（fetchへ移行）
 import { Browser } from 'puppeteer-core'
 import { DiscordApi } from './discord'
 import { Logger } from '@book000/node-utils'
