@@ -1,5 +1,3 @@
-// axios 削除（fetchへ移行）
-import FormData from 'form-data'
 import fs from 'node:fs'
 
 export interface DiscordEmbedFooter {
@@ -79,22 +77,26 @@ export class DiscordApi {
     const formData = new FormData()
     formData.append(
       'payload_json',
-      JSON.stringify({
-        content,
-        embeds: [embed]
-      })
+      new Blob(
+        [
+          JSON.stringify({
+            content,
+            embeds: [embed]
+          })
+        ],
+        { type: 'application/json' }
+      )
     )
 
     const arraybuffer = fs.readFileSync(imagePath)
-
-    formData.append('file', arraybuffer, {
-      filename: `${isSpoiler ? 'SPOILER_' : ''}image.png`,
-      contentType: 'image/png'
-    })
+    formData.append(
+      'file',
+      new Blob([arraybuffer]),
+      `${isSpoiler ? 'SPOILER_' : ''}image.png`
+    )
     const res = await fetch(this.webhookUrl, {
       method: 'POST',
-      headers: formData.getHeaders(),
-      body: formData as any // Node.jsのFormDataは型が異なるためanyで回避
+      body: formData
     })
     if (!res.ok) {
       throw new Error(`Failed to send message to Discord: ${res.status}`)
