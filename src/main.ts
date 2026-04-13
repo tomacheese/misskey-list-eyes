@@ -33,19 +33,24 @@ function checkEnvironment() {
 }
 
 async function getUserListTimeline(accessToken: string, listId: string) {
-  const res = await fetch(`https://${process.env.INSTANCE_DOMAIN}/api/notes/user-list-timeline`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      i: accessToken,
-      listId,
-      limit: 100
-    })
-  })
+  const res = await fetch(
+    `https://${process.env.INSTANCE_DOMAIN}/api/notes/user-list-timeline`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        i: accessToken,
+        listId,
+        limit: 100
+      })
+    }
+  )
   if (!res.ok) {
-    throw new Error(`Failed to get user list timeline: ${res.status} ${res.statusText}`)
+    throw new Error(
+      `Failed to get user list timeline: ${res.status} ${res.statusText}`
+    )
   }
   return (await res.json()) as NotesUserListTimelineResponse
 }
