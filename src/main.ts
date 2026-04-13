@@ -1,4 +1,4 @@
-import axios from 'axios'
+// axios 削除（fetchへ移行）
 import { Browser } from 'puppeteer-core'
 import { DiscordApi } from './discord'
 import { Logger } from '@book000/node-utils'
@@ -33,25 +33,21 @@ function checkEnvironment() {
 }
 
 async function getUserListTimeline(accessToken: string, listId: string) {
-  const response = await axios.post<NotesUserListTimelineResponse>(
-    `https://${process.env.INSTANCE_DOMAIN}/api/notes/user-list-timeline`,
-    {
+  const res = await fetch(`https://${process.env.INSTANCE_DOMAIN}/api/notes/user-list-timeline`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
       i: accessToken,
       listId,
       limit: 100
-    },
-    {
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    }
-  )
-  if (response.status !== 200) {
-    throw new Error(
-      `Failed to get user list timeline: ${response.status} ${response.statusText}`
-    )
+    })
+  })
+  if (!res.ok) {
+    throw new Error(`Failed to get user list timeline: ${res.status} ${res.statusText}`)
   }
-  return response.data
+  return (await res.json()) as NotesUserListTimelineResponse
 }
 
 async function main() {

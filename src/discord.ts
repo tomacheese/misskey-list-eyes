@@ -1,4 +1,4 @@
-import axios from 'axios'
+// axios 削除（fetchへ移行）
 import FormData from 'form-data'
 import fs from 'node:fs'
 
@@ -91,11 +91,13 @@ export class DiscordApi {
       filename: `${isSpoiler ? 'SPOILER_' : ''}image.png`,
       contentType: 'image/png'
     })
-    const response = await axios.post(this.webhookUrl, formData, {
-      headers: formData.getHeaders()
+    const res = await fetch(this.webhookUrl, {
+      method: 'POST',
+      headers: formData.getHeaders(),
+      body: formData as any // Node.jsのFormDataは型が異なるためanyで回避
     })
-    if (response.status !== 200) {
-      throw new Error(`Failed to send message to Discord: ${response.status}`)
+    if (!res.ok) {
+      throw new Error(`Failed to send message to Discord: ${res.status}`)
     }
   }
 }
