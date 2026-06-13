@@ -26,7 +26,6 @@
     "@book000/node-utils": "1.24.223",
     "@types/node": "24.13.1",
     "@vercel/ncc": "0.44.0",
-
     "eslint": "10.4.1",
     "eslint-config-standard": "17.1.0",
     "eslint-plugin-import": "2.32.0",
@@ -36,7 +35,7 @@
     "puppeteer-core": "25.1.0",
     "ts-node": "10.9.2",
     "ts-node-dev": "2.0.0",
-    "typescript": "5.9.3",
+    "typescript": "6.0.3",
     "yarn-run-all": "3.1.1"
   }
 }
