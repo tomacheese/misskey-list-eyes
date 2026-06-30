@@ -26,7 +26,7 @@
     "@book000/node-utils": "1.24.250",
     "@types/node": "24.13.2",
     "@vercel/ncc": "0.44.0",
-    "eslint": "10.5.0",
+    "eslint": "10.6.0",
     "eslint-config-standard": "17.1.0",
     "eslint-plugin-import": "2.32.0",
     "eslint-plugin-n": "18.2.1",
