@@ -2,6 +2,71 @@ import puppeteer, { Browser, Page } from 'puppeteer-core'
 import fs from 'node:fs'
 import { Logger } from '@book000/node-utils'
 
+/**
+ * ノート本体候補の article 要素についての判定用情報。
+ * ブラウザコンテキストで抽出した結果を Node.js 側に渡すためのプレーンなデータ構造。
+ */
+export interface ArticleCandidate {
+  /** タイムラインプレビューウィジェット等、サイドバー由来の要素かどうか */
+  hasScrollAnchorAncestor: boolean
+  /** article 要素のテキスト内容 */
+  textContent: string
+}
+
+/**
+ * selectNoteArticleIndex の判定結果。
+ */
+export interface NoteArticleSelection {
+  /** candidates 配列内で選択された要素のインデックス */
+  index: number
+  /** 本文照合で一意に決定できず、フォールバックで選択した場合に true */
+  isAmbiguous: boolean
+}
+
+/**
+ * ノート詳細ページ内の複数の article 候補から、本体ノートの article を選択する。
+ *
+ * misskey.io は未ログイン状態で /notes/:id にアクセスすると、サイドバーの
+ * タイムラインプレビューウィジェット内にも無関係な article 要素が大量に
+ * 描画される。これらは data-scroll-anchor 属性を持つ要素の子孫であるため、
+ * まずそれらを除外し、残った候補を API 取得済みの本文（cw があれば cw、
+ * なければ text）と照合して本体を特定する。
+ *
+ * @param candidates - ページ内の全 article 要素から抽出した候補一覧
+ * @param expectedText - 本体ノートの本文（note.cw ?? note.text ?? ''）
+ * @returns 選択結果。除外後の候補が0件の場合は null
+ */
+export function selectNoteArticleIndex(
+  candidates: ArticleCandidate[],
+  expectedText: string
+): NoteArticleSelection | null {
+  const nonSidebarIndices = candidates
+    .map((_, index) => index)
+    .filter((index) => !candidates[index].hasScrollAnchorAncestor)
+
+  if (nonSidebarIndices.length === 0) {
+    return null
+  }
+
+  if (nonSidebarIndices.length === 1) {
+    return { index: nonSidebarIndices[0], isAmbiguous: false }
+  }
+
+  if (expectedText !== '') {
+    const matchedIndices = nonSidebarIndices.filter((index) =>
+      candidates[index].textContent.includes(expectedText)
+    )
+    if (matchedIndices.length > 0) {
+      return { index: matchedIndices[0], isAmbiguous: false }
+    }
+  }
+
+  return {
+    index: nonSidebarIndices[nonSidebarIndices.length - 1],
+    isAmbiguous: true,
+  }
+}
+
 export async function initPuppeteerBrowser() {
   const puppeteerArguments = [
     '--no-sandbox',
