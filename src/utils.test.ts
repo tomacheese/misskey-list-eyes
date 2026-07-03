@@ -73,34 +73,61 @@ describe('selectNoteArticleIndex', () => {
 /**
  * テスト用の ElementHandle フェイクを作成する。
  * evaluate は常に渡された candidate データを返す（DOM 抽出ロジック自体は対象外）。
+ * dispose の呼び出し検証をしやすいよう、モック関数の参照を別途返す。
  */
 function createFakeArticleHandle(candidate: {
   hasScrollAnchorAncestor: boolean
   textContent: string
-}): ElementHandle {
-  return {
-    evaluate: jest.fn().mockResolvedValue(candidate)
+}): { handle: ElementHandle; dispose: jest.Mock } {
+  const dispose = jest.fn().mockResolvedValue(undefined)
+  const handle = {
+    evaluate: jest.fn().mockResolvedValue(candidate),
+    dispose
   } as unknown as ElementHandle
+  return { handle, dispose }
 }
 
 describe('waitForNoteElement', () => {
   it('1回目で article が1件見つかれば reload せずに ElementHandle を返す', async () => {
-    const targetHandle = createFakeArticleHandle({
+    const target = createFakeArticleHandle({
       hasScrollAnchorAncestor: false,
       textContent: 'sorausa @sorausa ねこ'
     })
     const reload = jest.fn().mockResolvedValue(undefined)
     const page = {
       waitForSelector: jest.fn().mockResolvedValue(undefined),
-      $$: jest.fn().mockResolvedValue([targetHandle]),
+      $$: jest.fn().mockResolvedValue([target.handle]),
       reload,
       screenshot: jest.fn().mockResolvedValue(undefined)
     } as unknown as Page
 
     const result = await waitForNoteElementForTesting(page, 'noteId1', 'ねこ')
 
-    expect(result).toBe(targetHandle)
+    expect(result).toBe(target.handle)
     expect(reload).not.toHaveBeenCalled()
+  })
+
+  it('本体特定後、選択されなかった ElementHandle を dispose し、選択された handle は dispose しない', async () => {
+    const sidebar = createFakeArticleHandle({
+      hasScrollAnchorAncestor: true,
+      textContent: '無関係なノート'
+    })
+    const target = createFakeArticleHandle({
+      hasScrollAnchorAncestor: false,
+      textContent: 'sorausa @sorausa ねこ'
+    })
+    const page = {
+      waitForSelector: jest.fn().mockResolvedValue(undefined),
+      $$: jest.fn().mockResolvedValue([sidebar.handle, target.handle]),
+      reload: jest.fn().mockResolvedValue(undefined),
+      screenshot: jest.fn().mockResolvedValue(undefined)
+    } as unknown as Page
+
+    const result = await waitForNoteElementForTesting(page, 'noteId4', 'ねこ')
+
+    expect(result).toBe(target.handle)
+    expect(sidebar.dispose).toHaveBeenCalledTimes(1)
+    expect(target.dispose).not.toHaveBeenCalled()
   })
 
   it('article 自体が見つからない場合、最大3回リトライした後 NoteElementNotFoundError を投げる', async () => {
@@ -127,14 +154,14 @@ describe('waitForNoteElement', () => {
   })
 
   it('article は見つかるがサイドバー由来のみで本体を特定できない場合もリトライする', async () => {
-    const sidebarHandle = createFakeArticleHandle({
+    const sidebar = createFakeArticleHandle({
       hasScrollAnchorAncestor: true,
       textContent: '無関係なノート'
     })
     const reload = jest.fn().mockResolvedValue(undefined)
     const page = {
       waitForSelector: jest.fn().mockResolvedValue(undefined),
-      $$: jest.fn().mockResolvedValue([sidebarHandle]),
+      $$: jest.fn().mockResolvedValue([sidebar.handle]),
       reload,
       screenshot: jest.fn().mockResolvedValue(undefined)
     } as unknown as Page
@@ -143,5 +170,7 @@ describe('waitForNoteElement', () => {
       waitForNoteElementForTesting(page, 'noteId3', 'ねこ')
     ).rejects.toThrow(NoteElementNotFoundError)
     expect(reload).toHaveBeenCalledTimes(2)
+    // 本体を特定できなかった場合は全候補を毎試行 dispose する
+    expect(sidebar.dispose).toHaveBeenCalledTimes(3)
   })
 })

@@ -98,7 +98,7 @@ export interface Note {
   createdAt: Date
   userId: string
   user: User
-  text: string
+  text: string | null
   cw?: string | null
   visibility: string
   localOnly: boolean

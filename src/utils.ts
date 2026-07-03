@@ -175,8 +175,27 @@ async function waitForNoteElement(
             `⚠️ Could not uniquely identify note article by text match. Using last candidate. (attempt ${attempt}/${WAIT_FOR_NOTE_ELEMENT_MAX_ATTEMPTS})`
           )
         }
+        // 選択されなかった ElementHandle はリークしないよう破棄する
+        await Promise.all(
+          articleHandles
+            .filter((_, index) => index !== selection.index)
+            .map((handle) =>
+              handle.dispose().catch(() => {
+                logger.warn('⚠️ Failed to dispose unused article handle')
+              })
+            )
+        )
         return articleHandles[selection.index]
       }
+
+      // 本体を特定できなかった場合は全ての候補が不要になるため破棄する
+      await Promise.all(
+        articleHandles.map((handle) =>
+          handle.dispose().catch(() => {
+            logger.warn('⚠️ Failed to dispose unused article handle')
+          })
+        )
+      )
 
       logger.warn(
         `🔄 No non-sidebar article candidate found. (attempt ${attempt}/${WAIT_FOR_NOTE_ELEMENT_MAX_ATTEMPTS})`
@@ -348,26 +367,33 @@ export async function downloadNotePreviewImage(
 
   logger.info('✨ Access to note page')
   const page = await browser.newPage()
-  await page.emulateMediaFeatures([
-    { name: 'prefers-color-scheme', value: 'dark' }
-  ])
-  await page.goto(url, { waitUntil: 'networkidle2' })
+  try {
+    await page.emulateMediaFeatures([
+      { name: 'prefers-color-scheme', value: 'dark' }
+    ])
+    await page.goto(url, { waitUntil: 'networkidle2' })
 
-  logger.info('✨ Wait for note element')
-  const article = await waitForNoteElement(page, noteId, expectedText)
+    logger.info('✨ Wait for note element')
+    const article = await waitForNoteElement(page, noteId, expectedText)
 
-  if (hasCW) {
-    logger.info('✨ Reveal content warning')
-    await revealContentWarning(article)
+    if (hasCW) {
+      logger.info('✨ Reveal content warning')
+      await revealContentWarning(article)
+    }
+
+    if (sensitiveFileIds.length > 0) {
+      logger.info('✨ Reveal sensitive files')
+      await revealSensitiveFiles(article, page, sensitiveFileIds)
+    }
+
+    logger.info('✨ Capture note screenshot')
+    const imagePath = await captureNote(article, noteId)
+
+    return { imagePath }
+  } finally {
+    // ページを確実に閉じることで、複数ノート処理時のページリーク（メモリ肥大化）を防ぐ
+    await page.close().catch(() => {
+      logger.warn('⚠️ Failed to close page')
+    })
   }
-
-  if (sensitiveFileIds.length > 0) {
-    logger.info('✨ Reveal sensitive files')
-    await revealSensitiveFiles(article, page, sensitiveFileIds)
-  }
-
-  logger.info('✨ Capture note screenshot')
-  const imagePath = await captureNote(article, noteId)
-
-  return { imagePath }
 }

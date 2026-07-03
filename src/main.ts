@@ -105,10 +105,9 @@ async function main() {
       const sensitiveFileIds = note.files
         .filter((file) => file.isSensitive)
         .map((file) => file.id)
-      // note.text は必須フィールド（string）で null/undefined になり得ないため、
-      // `note.text ?? ''` のように二重に ?? を重ねると
-      // @typescript-eslint/no-unnecessary-condition に抵触する
-      const expectedText = note.cw ?? note.text
+      // note.text はメディアのみの投稿などで null になり得るため、
+      // expectedText が確実に string になるよう ?? '' でガードする
+      const expectedText = note.cw ?? note.text ?? ''
 
       logger.info(`📷 Downloading image: ${url}`)
       let imagePath: string | null
