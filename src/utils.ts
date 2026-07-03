@@ -1,4 +1,4 @@
-import puppeteer, { Browser, Page } from 'puppeteer-core'
+import puppeteer, { Browser, ElementHandle, Page } from 'puppeteer-core'
 import fs from 'node:fs'
 import { Logger } from '@book000/node-utils'
 
@@ -96,30 +96,119 @@ export async function initPuppeteerBrowser() {
   })
 }
 
-async function waitForNoteElement(page: Page, noteId: string) {
-  const logger = Logger.configure(`waitForNoteElement:${noteId}`)
-  // div.contents articleが出てくるのを10秒待って、出てこなかったらリロード + リトライ
-  await page
-    .waitForSelector('div.contents article', {
-      timeout: 10_000
-    })
-    .catch(async () => {
-      logger.warn(`🔄 Failed to wait note element. Retrying...`)
-      await page.reload()
-    })
-
-  await page.waitForSelector('div.contents article').finally(() => {
-    const imageFullPath = `/data/${noteId}.full.png` as const
-    page
-      .screenshot({
-        path: imageFullPath,
-        fullPage: true
-      })
-      .catch(() => {
-        logger.error(`🚨 Failed to capture full page screenshot`)
-      })
-  })
+/**
+ * ノート本体の article 要素の特定に失敗した場合に送出されるエラー。
+ */
+export class NoteElementNotFoundError extends Error {
+  constructor(noteId: string) {
+    super(`Failed to identify note article element for noteId=${noteId}`)
+    this.name = 'NoteElementNotFoundError'
+  }
 }
+
+/**
+ * article 要素から selectNoteArticleIndex 用の候補情報を抽出する。
+ * ElementHandle.evaluate() の引数として渡され、ブラウザコンテキストで実行される。
+ * @param article - 対象の article DOM 要素
+ * @returns 判定用の候補情報
+ */
+function extractArticleCandidate(article: Element): ArticleCandidate {
+  let element: Element | null = article
+  let hasScrollAnchorAncestor = false
+  while (element) {
+    if ((element as HTMLElement).dataset.scrollAnchor !== undefined) {
+      hasScrollAnchorAncestor = true
+      break
+    }
+    element = element.parentElement
+  }
+  return {
+    hasScrollAnchorAncestor,
+    textContent: article.textContent || ''
+  }
+}
+
+const WAIT_FOR_NOTE_ELEMENT_MAX_ATTEMPTS = 3
+
+/**
+ * ノート詳細ページから本体ノートの article 要素を特定するまで待機する。
+ * misskey.io のフロントエンド更新で DOM 構造が変わっても壊れないよう、
+ * CSS Modules のハッシュ化クラス名には依存せず、サイドバー除外 + 本文照合
+ * （selectNoteArticleIndex）で本体を判定する。
+ *
+ * 最大 {@link WAIT_FOR_NOTE_ELEMENT_MAX_ATTEMPTS} 回まで、article 要素の
+ * 出現待ち → 本体特定 を試行し、reload を挟みながらリトライする。
+ * 全て失敗した場合は最終試行時点で全画面デバッグスクショを撮った上で
+ * {@link NoteElementNotFoundError} を送出する。
+ *
+ * @param page - 対象の Puppeteer ページ
+ * @param noteId - 対象ノートの ID（ログ・デバッグスクショのファイル名に使用）
+ * @param expectedText - 本体ノートの本文（note.cw ?? note.text ?? ''）
+ * @returns 本体ノートの article 要素の ElementHandle
+ */
+async function waitForNoteElement(
+  page: Page,
+  noteId: string,
+  expectedText: string
+): Promise<ElementHandle> {
+  const logger = Logger.configure(`waitForNoteElement:${noteId}`)
+
+  for (
+    let attempt = 1;
+    attempt <= WAIT_FOR_NOTE_ELEMENT_MAX_ATTEMPTS;
+    attempt++
+  ) {
+    const isLastAttempt = attempt === WAIT_FOR_NOTE_ELEMENT_MAX_ATTEMPTS
+
+    try {
+      await page.waitForSelector('article', { timeout: 10_000 })
+
+      const articleHandles = await page.$$('article')
+      const candidates = await Promise.all(
+        articleHandles.map((handle) => handle.evaluate(extractArticleCandidate))
+      )
+      const selection = selectNoteArticleIndex(candidates, expectedText)
+
+      if (selection) {
+        if (selection.isAmbiguous) {
+          logger.warn(
+            `⚠️ Could not uniquely identify note article by text match. Using last candidate. (attempt ${attempt}/${WAIT_FOR_NOTE_ELEMENT_MAX_ATTEMPTS})`
+          )
+        }
+        return articleHandles[selection.index]
+      }
+
+      logger.warn(
+        `🔄 No non-sidebar article candidate found. (attempt ${attempt}/${WAIT_FOR_NOTE_ELEMENT_MAX_ATTEMPTS})`
+      )
+    } catch {
+      logger.warn(
+        `🔄 Failed to wait note element. (attempt ${attempt}/${WAIT_FOR_NOTE_ELEMENT_MAX_ATTEMPTS})`
+      )
+    }
+
+    if (isLastAttempt) {
+      const imageFullPath = `/data/${noteId}.full.png` as const
+      await page
+        .screenshot({ path: imageFullPath, fullPage: true })
+        .catch(() => {
+          logger.error(`🚨 Failed to capture full page screenshot`)
+        })
+      throw new NoteElementNotFoundError(noteId)
+    }
+
+    await page.reload()
+  }
+
+  // WAIT_FOR_NOTE_ELEMENT_MAX_ATTEMPTS >= 1 である限りここには到達しない
+  throw new NoteElementNotFoundError(noteId)
+}
+
+/**
+ * waitForNoteElement のテスト専用エクスポート。
+ * プロダクションコードからは呼び出さず、src/utils.test.ts からのみ利用する。
+ */
+export const waitForNoteElementForTesting = waitForNoteElement
 
 async function isContentWarning(page: Page) {
   // div.contents article button.xd2wm があるかどうかで判定する
@@ -189,7 +278,9 @@ async function captureNote(page: Page, noteId: string) {
 export async function downloadNotePreviewImage(
   browser: Browser,
   instanceDomain: string,
-  noteId: string
+  noteId: string,
+  noteText?: string,
+  noteCw?: string | null
 ) {
   const logger = Logger.configure('downloadNotePreviewImage')
   // /tmp がなかったら作る
@@ -207,7 +298,8 @@ export async function downloadNotePreviewImage(
   await page.goto(url, { waitUntil: 'networkidle2' })
 
   logger.info('✨ Wait for note element')
-  await waitForNoteElement(page, noteId)
+  const expectedText = noteCw ?? noteText ?? ''
+  await waitForNoteElement(page, noteId, expectedText)
 
   logger.info('✨ Check content warning')
   const isCW = await isContentWarning(page)

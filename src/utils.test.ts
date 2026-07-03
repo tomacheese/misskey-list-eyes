@@ -1,4 +1,9 @@
-import { selectNoteArticleIndex } from './utils'
+import type { ElementHandle, Page } from 'puppeteer-core'
+import {
+  NoteElementNotFoundError,
+  selectNoteArticleIndex,
+  waitForNoteElementForTesting
+} from './utils'
 
 describe('selectNoteArticleIndex', () => {
   it('候補が0件の場合は null を返す', () => {
@@ -62,5 +67,81 @@ describe('selectNoteArticleIndex', () => {
       ''
     )
     expect(result).toEqual({ index: 1, isAmbiguous: true })
+  })
+})
+
+/**
+ * テスト用の ElementHandle フェイクを作成する。
+ * evaluate は常に渡された candidate データを返す（DOM 抽出ロジック自体は対象外）。
+ */
+function createFakeArticleHandle(candidate: {
+  hasScrollAnchorAncestor: boolean
+  textContent: string
+}): ElementHandle {
+  return {
+    evaluate: jest.fn().mockResolvedValue(candidate)
+  } as unknown as ElementHandle
+}
+
+describe('waitForNoteElement', () => {
+  it('1回目で article が1件見つかれば reload せずに ElementHandle を返す', async () => {
+    const targetHandle = createFakeArticleHandle({
+      hasScrollAnchorAncestor: false,
+      textContent: 'sorausa @sorausa ねこ'
+    })
+    const reload = jest.fn().mockResolvedValue(undefined)
+    const page = {
+      waitForSelector: jest.fn().mockResolvedValue(undefined),
+      $$: jest.fn().mockResolvedValue([targetHandle]),
+      reload,
+      screenshot: jest.fn().mockResolvedValue(undefined)
+    } as unknown as Page
+
+    const result = await waitForNoteElementForTesting(page, 'noteId1', 'ねこ')
+
+    expect(result).toBe(targetHandle)
+    expect(reload).not.toHaveBeenCalled()
+  })
+
+  it('article 自体が見つからない場合、最大3回リトライした後 NoteElementNotFoundError を投げる', async () => {
+    const reload = jest.fn().mockResolvedValue(undefined)
+    const screenshot = jest.fn().mockResolvedValue(undefined)
+    const page = {
+      waitForSelector: jest.fn().mockRejectedValue(new Error('timeout')),
+      $$: jest.fn().mockResolvedValue([]),
+      reload,
+      screenshot
+    } as unknown as Page
+
+    await expect(
+      waitForNoteElementForTesting(page, 'noteId2', 'ねこ')
+    ).rejects.toThrow(NoteElementNotFoundError)
+    // 3回試行し、最後の1回を除く2回で reload が呼ばれる
+    expect(reload).toHaveBeenCalledTimes(2)
+    // 最終失敗時に全画面デバッグスクショを1回だけ撮る
+    expect(screenshot).toHaveBeenCalledTimes(1)
+    expect(screenshot).toHaveBeenCalledWith({
+      path: '/data/noteId2.full.png',
+      fullPage: true
+    })
+  })
+
+  it('article は見つかるがサイドバー由来のみで本体を特定できない場合もリトライする', async () => {
+    const sidebarHandle = createFakeArticleHandle({
+      hasScrollAnchorAncestor: true,
+      textContent: '無関係なノート'
+    })
+    const reload = jest.fn().mockResolvedValue(undefined)
+    const page = {
+      waitForSelector: jest.fn().mockResolvedValue(undefined),
+      $$: jest.fn().mockResolvedValue([sidebarHandle]),
+      reload,
+      screenshot: jest.fn().mockResolvedValue(undefined)
+    } as unknown as Page
+
+    await expect(
+      waitForNoteElementForTesting(page, 'noteId3', 'ねこ')
+    ).rejects.toThrow(NoteElementNotFoundError)
+    expect(reload).toHaveBeenCalledTimes(2)
   })
 })

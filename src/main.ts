@@ -106,7 +106,9 @@ async function main() {
       const result = await downloadNotePreviewImage(
         browser,
         instanceDomain,
-        noteId
+        noteId,
+        note.text,
+        note.cw
       )
       const imagePath = result.imagePath
       if (!imagePath) {
