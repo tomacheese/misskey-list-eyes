@@ -101,16 +101,35 @@ async function main() {
       }
 
       const url = `https://${instanceDomain}/notes/${noteId}`
+      const hasCW = note.cw != null
+      const sensitiveFileIds = note.files
+        .filter((file) => file.isSensitive)
+        .map((file) => file.id)
+      // note.text は必須フィールド（string）で null/undefined になり得ないため、
+      // `note.text ?? ''` のように二重に ?? を重ねると
+      // @typescript-eslint/no-unnecessary-condition に抵触する
+      const expectedText = note.cw ?? note.text
 
       logger.info(`📷 Downloading image: ${url}`)
-      const result = await downloadNotePreviewImage(
-        browser,
-        instanceDomain,
-        noteId,
-        note.text,
-        note.cw
-      )
-      const imagePath = result.imagePath
+      let imagePath: string | null
+      try {
+        const result = await downloadNotePreviewImage(
+          browser,
+          instanceDomain,
+          noteId,
+          expectedText,
+          hasCW,
+          sensitiveFileIds
+        )
+        imagePath = result.imagePath
+      } catch (error) {
+        // 1ノートの撮影失敗が他ノートの処理をブロックしないよう、
+        // ここで捕捉して次のノートへ進む。Notified.addNotified を呼ばないため
+        // 次回 cron 実行時に再度リトライされる
+        logger.warn(`⚠️ Failed to download image: ${url}`, error as Error)
+        continue
+      }
+
       if (!imagePath) {
         logger.warn(`📝 Failed to download image: ${url}`)
         continue
@@ -118,7 +137,7 @@ async function main() {
 
       logger.info('📝 Send messages to Discord')
 
-      const isSpoiler = result.isCW || result.isNSFWImage
+      const isSpoiler = hasCW || sensitiveFileIds.length > 0
       await discord.sendMessage(
         '',
         {
