@@ -9,7 +9,7 @@ RUN echo network-timeout 600000 > .yarnrc && \
   yarn cache clean
 
 COPY src/ src/
-COPY tsconfig.json .
+COPY tsconfig.json tsconfig.build.json .
 
 RUN yarn package
 
