@@ -99,7 +99,7 @@ export interface Note {
   userId: string
   user: User
   text: string
-  cw?: unknown
+  cw?: string | null
   visibility: string
   localOnly: boolean
   renoteCount: number
@@ -107,7 +107,7 @@ export interface Note {
   reactions: Reactions
   reactionEmojis: ReactionEmojis
   fileIds: unknown[]
-  files: unknown[]
+  files: File[]
   replyId?: unknown
   renoteId: string
   renote: Renote
