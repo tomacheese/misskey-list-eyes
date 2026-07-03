@@ -210,78 +210,134 @@ async function waitForNoteElement(
  */
 export const waitForNoteElementForTesting = waitForNoteElement
 
-async function isContentWarning(page: Page) {
-  // div.contents article button.xd2wm があるかどうかで判定する
-  return (await page.$('div.contents article button.xd2wm')) != null
-}
+/**
+ * 特定済みの本体ノート article 内の CW（閲覧注意）展開ボタンをクリックし、
+ * 隠れている本文を表示する。
+ *
+ * ボタンのクラス名（xd2wm 等）は misskey.io のビルドごとに変わりうるため、
+ * ボタンのテキスト内容（「もっと見る」で始まるか）で判定する。
+ * ボタンが見つからない場合は警告ログを出し、CW を閉じたまま撮影を続行する
+ * （無限リトライを避けるため、ここでは例外を投げない）。
+ *
+ * @param article - waitForNoteElement で特定した本体ノートの article 要素
+ */
+async function revealContentWarning(article: ElementHandle): Promise<void> {
+  const logger = Logger.configure('revealContentWarning')
+  const buttons = await article.$$('button')
 
-async function showContentWarning(page: Page) {
-  await page
-    .waitForSelector('div.contents article button.xd2wm')
-    .then((element) =>
-      // display: none;を削除する
-      page.evaluate((element) => {
-        ;(element as HTMLElement).dispatchEvent(new Event('mousedown'))
-      }, element)
-    )
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    .catch(() => {})
-}
-
-async function isNSFW(page: Page) {
-  // とりあえず、div.xuA87.xesxEがあるかどうかで判定する。多分変わるだろうと思うから適宜
-  return (await page.$('div.xuA87.xesxE')) != null
-}
-
-async function showNSFW(page: Page) {
-  await page
-    .waitForSelector('div.xuA87.xesxE')
-    .then((element) => element?.click())
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    .catch(() => {})
-
-  // 画像が開いてしまうので、閉じる
-  await page
-    .waitForSelector('button.pswp__button--close')
-    .then((element) => element?.click())
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    .catch(() => {})
-}
-
-async function captureNote(page: Page, noteId: string) {
-  const imagePath = `/tmp/${noteId}.png` as const
-
-  // スクショを撮る範囲の計算
-  const clip = await page.evaluate((s) => {
-    const element = document.querySelector(s)
-    if (!element) {
-      return null
+  for (const button of buttons) {
+    const text = await button.evaluate((element) => element.textContent.trim())
+    if (text.startsWith('もっと見る')) {
+      // Vue 側のハンドラが mousedown を購読しているため click ではなく
+      // mousedown イベントを dispatch する（既存実装を踏襲）
+      await button.evaluate((element) => {
+        element.dispatchEvent(new Event('mousedown'))
+      })
+      return
     }
-    element.scrollIntoView()
-
-    const { width, height, top: y, left: x } = element.getBoundingClientRect()
-    return { width, height, x, y }
-  }, 'div.contents article')
-
-  if (!clip) {
-    return null
   }
 
-  await page.screenshot({
-    path: imagePath,
-    clip
+  logger.warn(
+    '⚠️ Content warning reveal button not found. Continuing without reveal.'
+  )
+}
+
+/**
+ * 特定済みの本体ノート article 内の、指定されたファイルIDに対応する
+ * センシティブメディアをクリックして表示する。
+ *
+ * クリック対象は misskey.io がメディア添付要素に付与するセマンティックな
+ * data-id 属性（Misskey API の file.id と一致する）で特定するため、
+ * CSS Modules のハッシュ化クラス名には依存しない。クリックすると
+ * PhotoSwipe のライトボックスが開くため、Escape キー送信で閉じる
+ * （PhotoSwipe はサードパーティ製ライブラリであり、misskey.io 自身の
+ * ビルドでクラス名がハッシュ化されるクラス名とは異なり比較的安定している
+ * ため、ライトボックスの出現待ちには .pswp セレクタを使う）。
+ *
+ * @param article - waitForNoteElement で特定した本体ノートの article 要素
+ * @param page - 対象の Puppeteer ページ（Escape キー送信に使用）
+ * @param sensitiveFileIds - note.files のうち isSensitive が true のファイルID一覧
+ */
+async function revealSensitiveFiles(
+  article: ElementHandle,
+  page: Page,
+  sensitiveFileIds: string[]
+): Promise<void> {
+  const logger = Logger.configure('revealSensitiveFiles')
+
+  for (const fileId of sensitiveFileIds) {
+    const mediaElement = await article.$(`div[data-id="${fileId}"]`)
+    if (!mediaElement) {
+      logger.warn(
+        `⚠️ Sensitive media element not found for fileId=${fileId}. Continuing without reveal.`
+      )
+      continue
+    }
+
+    await mediaElement.click()
+    await page.waitForSelector('.pswp', { timeout: 5000 }).catch(() => {
+      logger.warn(`⚠️ Lightbox did not open for fileId=${fileId}. Continuing.`)
+    })
+    await page.keyboard.press('Escape').catch(() => undefined)
+  }
+}
+
+/**
+ * 特定済みの本体ノート article 要素をスクリーンショットとして保存する。
+ * ElementHandle.screenshot() を使うことで、クリップ範囲の手動計算
+ * （getBoundingClientRect）を不要にする。
+ *
+ * @param article - waitForNoteElement で特定した本体ノートの article 要素
+ * @param noteId - 保存ファイル名に使用するノートID
+ * @returns 保存した画像の絶対パス
+ */
+async function captureNote(
+  article: ElementHandle,
+  noteId: string
+): Promise<string> {
+  const imagePath = `/tmp/${noteId}.png` as const
+
+  await article.evaluate((element) => {
+    element.scrollIntoView()
   })
+  await article.screenshot({ path: imagePath })
 
   return imagePath
 }
 
+/**
+ * downloadNotePreviewImage の戻り値。
+ */
+export interface DownloadNotePreviewImageResult {
+  /** 撮影した画像の絶対パス。本体 article の特定に失敗した場合は null */
+  imagePath: string | null
+}
+
+/**
+ * 指定したノートの詳細ページにアクセスし、本体ノート部分をスクリーンショットとして
+ * ダウンロードする。
+ *
+ * CW（閲覧注意）・NSFW（センシティブメディア）の判定は DOM を見ずに、
+ * 呼び出し元（main.ts）が Misskey API のレスポンスから計算した値を
+ * 受け取って利用する。
+ *
+ * @param browser - Puppeteer の Browser インスタンス
+ * @param instanceDomain - Misskey インスタンスのドメイン
+ * @param noteId - 対象ノートのID
+ * @param expectedText - 本体ノートの本文（note.cw ?? note.text ?? ''）。
+ *   本体 article の一意特定に使用する
+ * @param hasCW - 対象ノートが CW 付きかどうか（note.cw != null）
+ * @param sensitiveFileIds - note.files のうち isSensitive が true のファイルID一覧
+ * @returns 撮影結果
+ */
 export async function downloadNotePreviewImage(
   browser: Browser,
   instanceDomain: string,
   noteId: string,
-  noteText?: string,
-  noteCw?: string | null
-) {
+  expectedText: string,
+  hasCW: boolean,
+  sensitiveFileIds: string[]
+): Promise<DownloadNotePreviewImageResult> {
   const logger = Logger.configure('downloadNotePreviewImage')
   // /tmp がなかったら作る
   if (!fs.existsSync('/tmp')) {
@@ -298,27 +354,20 @@ export async function downloadNotePreviewImage(
   await page.goto(url, { waitUntil: 'networkidle2' })
 
   logger.info('✨ Wait for note element')
-  const expectedText = noteCw ?? noteText ?? ''
-  await waitForNoteElement(page, noteId, expectedText)
+  const article = await waitForNoteElement(page, noteId, expectedText)
 
-  logger.info('✨ Check content warning')
-  const isCW = await isContentWarning(page)
-  if (isCW) {
-    logger.info('✨ Show content warning')
-    await showContentWarning(page)
+  if (hasCW) {
+    logger.info('✨ Reveal content warning')
+    await revealContentWarning(article)
   }
 
-  logger.info('✨ Check NSFW')
-  const isNSFWImage = await isNSFW(page)
-  if (isNSFWImage) {
-    logger.info('✨ Show NSFW')
-    await showNSFW(page)
+  if (sensitiveFileIds.length > 0) {
+    logger.info('✨ Reveal sensitive files')
+    await revealSensitiveFiles(article, page, sensitiveFileIds)
   }
 
   logger.info('✨ Capture note screenshot')
-  return {
-    imagePath: await captureNote(page, noteId),
-    isCW,
-    isNSFWImage
-  }
+  const imagePath = await captureNote(article, noteId)
+
+  return { imagePath }
 }
