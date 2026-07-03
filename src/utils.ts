@@ -61,9 +61,15 @@ export function selectNoteArticleIndex(
     }
   }
 
+  const lastIndex = nonSidebarIndices.at(-1)
+  if (lastIndex === undefined) {
+    // nonSidebarIndices.length === 0 は関数冒頭で return 済みのため到達しない
+    return null
+  }
+
   return {
-    index: nonSidebarIndices[nonSidebarIndices.length - 1],
-    isAmbiguous: true,
+    index: lastIndex,
+    isAmbiguous: true
   }
 }
 

@@ -10,7 +10,7 @@ describe('selectNoteArticleIndex', () => {
     const result = selectNoteArticleIndex(
       [
         { hasScrollAnchorAncestor: true, textContent: '無関係なノート1' },
-        { hasScrollAnchorAncestor: true, textContent: '無関係なノート2' },
+        { hasScrollAnchorAncestor: true, textContent: '無関係なノート2' }
       ],
       'ねこ'
     )
@@ -21,7 +21,10 @@ describe('selectNoteArticleIndex', () => {
     const result = selectNoteArticleIndex(
       [
         { hasScrollAnchorAncestor: true, textContent: '無関係なノート' },
-        { hasScrollAnchorAncestor: false, textContent: '本文が一致しないテキスト' },
+        {
+          hasScrollAnchorAncestor: false,
+          textContent: '本文が一致しないテキスト'
+        }
       ],
       'ねこ'
     )
@@ -32,7 +35,7 @@ describe('selectNoteArticleIndex', () => {
     const result = selectNoteArticleIndex(
       [
         { hasScrollAnchorAncestor: false, textContent: '返信元ノートの本文' },
-        { hasScrollAnchorAncestor: false, textContent: 'sorausa @sorausa ねこ' },
+        { hasScrollAnchorAncestor: false, textContent: 'sorausa @sorausa ねこ' }
       ],
       'ねこ'
     )
@@ -43,7 +46,7 @@ describe('selectNoteArticleIndex', () => {
     const result = selectNoteArticleIndex(
       [
         { hasScrollAnchorAncestor: false, textContent: '本文A' },
-        { hasScrollAnchorAncestor: false, textContent: '本文B' },
+        { hasScrollAnchorAncestor: false, textContent: '本文B' }
       ],
       'ねこ'
     )
@@ -54,7 +57,7 @@ describe('selectNoteArticleIndex', () => {
     const result = selectNoteArticleIndex(
       [
         { hasScrollAnchorAncestor: false, textContent: '本文A' },
-        { hasScrollAnchorAncestor: false, textContent: '本文B' },
+        { hasScrollAnchorAncestor: false, textContent: '本文B' }
       ],
       ''
     )
