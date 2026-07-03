@@ -1,4 +1,5 @@
-import puppeteer, { Browser, ElementHandle, Page } from 'puppeteer-core'
+import puppeteer from 'puppeteer-core'
+import type { Browser, ElementHandle, Page } from 'puppeteer-core'
 import fs from 'node:fs'
 import { Logger } from '@book000/node-utils'
 
@@ -56,8 +57,16 @@ export function selectNoteArticleIndex(
     const matchedIndices = nonSidebarIndices.filter((index) =>
       candidates[index].textContent.includes(expectedText)
     )
-    if (matchedIndices.length > 0) {
+    if (matchedIndices.length === 1) {
       return { index: matchedIndices[0], isAmbiguous: false }
+    }
+    if (matchedIndices.length > 1) {
+      // 複数候補が本文と一致した場合は一意に特定できないため、
+      // 末尾（DOM 上で最後に出現する候補）を暫定選択しつつ isAmbiguous を立てる
+      const lastMatchedIndex = matchedIndices.at(-1)
+      if (lastMatchedIndex !== undefined) {
+        return { index: lastMatchedIndex, isAmbiguous: true }
+      }
     }
   }
 
@@ -245,7 +254,12 @@ async function revealContentWarning(article: ElementHandle): Promise<void> {
   const buttons = await article.$$('button')
 
   for (const button of buttons) {
-    const text = await button.evaluate((element) => element.textContent.trim())
+    // element.textContent は仕様上 Element では null にならないが、
+    // extractArticleCandidate と同様に念のため空文字へフォールバックする
+    // （`??` は @typescript-eslint/no-unnecessary-condition に抵触するため `||` を使う）
+    const text = await button.evaluate((element) =>
+      (element.textContent || '').trim()
+    )
     if (text.startsWith('もっと見る')) {
       // Vue 側のハンドラが mousedown を購読しているため click ではなく
       // mousedown イベントを dispatch する（既存実装を踏襲）

@@ -68,6 +68,21 @@ describe('selectNoteArticleIndex', () => {
     )
     expect(result).toEqual({ index: 1, isAmbiguous: true })
   })
+
+  it('複数の非サイドバー候補があり、本文が一致するものが複数件ある場合は最後に一致した候補を採用し isAmbiguous: true を返す', () => {
+    const result = selectNoteArticleIndex(
+      [
+        {
+          hasScrollAnchorAncestor: false,
+          textContent: 'sorausa @sorausa ねこ'
+        },
+        { hasScrollAnchorAncestor: false, textContent: '無関係なノート' },
+        { hasScrollAnchorAncestor: false, textContent: 'sorausa @sorausa ねこ' }
+      ],
+      'ねこ'
+    )
+    expect(result).toEqual({ index: 2, isAmbiguous: true })
+  })
 })
 
 /**
