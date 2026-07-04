@@ -11,12 +11,13 @@
     "dev": "ts-node-dev --poll -r tsconfig-paths/register ./src/main.ts",
     "package": "run-s clean compile packing",
     "packing": "ncc build ./dist/main.js -o output/",
-    "compile": "tsc -p .",
+    "compile": "tsc -p tsconfig.build.json",
     "clean": "rimraf dist output",
     "lint": "run-p -c lint:prettier lint:eslint lint:tsc",
     "lint:prettier": "prettier --check src",
     "lint:eslint": "eslint . -c eslint.config.mjs",
     "lint:tsc": "tsc",
+    "test": "vitest run",
     "fix": "run-s fix:prettier fix:eslint",
     "fix:eslint": "eslint . -c eslint.config.mjs --fix",
     "fix:prettier": "prettier --write src"
@@ -36,6 +37,7 @@
     "ts-node": "10.9.2",
     "ts-node-dev": "2.0.0",
     "typescript": "6.0.3",
+    "vitest": "4.1.9",
     "yarn-run-all": "3.1.1"
   }
 }

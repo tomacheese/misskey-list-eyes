@@ -38,6 +38,19 @@ services:
 - `API_ACCESS_TOKEN`: Misskey インスタンスの API アクセストークン。[Misskey Hub の記事](https://misskey-hub.net/docs/api/) を参考に入手してください。
 - `DISCORD_WEBHOOK_URL`: Discord Webhook の URL。[Discord ヘルプセンターの記事](https://support.discord.com/hc/ja/articles/228383668) を参考に入手してください。
 
+## Development
+
+```bash
+# 依存関係インストール
+yarn install
+
+# テスト実行
+yarn test
+
+# Lint
+yarn lint
+```
+
 ## License
 
 このプロジェクトのライセンスは [MIT License](LICENSE) です。  
