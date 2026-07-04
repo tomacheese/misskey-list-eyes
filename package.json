@@ -4,21 +4,18 @@
   "license": "MIT",
   "author": "Tomachi",
   "private": true,
-  "main": "output/index.js",
   "repository": "https://github.com/tomacheese/misskey-list-eyes",
+  "packageManager": "pnpm@11.9.0+sha512.bd682d5d03fe525ef7c9fd6780c6884d1e756ac4c9c9fe00c538782824310dcf90e3ddc4f53835f06dfaebd5085e41855e0bcbb3b60de2ac5bbab89e5036f03b",
   "scripts": {
+    "preinstall": "npx only-allow pnpm",
     "start": "ts-node -r tsconfig-paths/register ./src/main.ts",
     "dev": "ts-node-dev --poll -r tsconfig-paths/register ./src/main.ts",
-    "package": "run-s clean compile packing",
-    "packing": "ncc build ./dist/main.js -o output/",
-    "compile": "tsc -p tsconfig.build.json",
-    "clean": "rimraf dist output",
-    "lint": "run-p -c lint:prettier lint:eslint lint:tsc",
+    "lint": "run-z lint:prettier,lint:eslint,lint:tsc",
     "lint:prettier": "prettier --check src",
     "lint:eslint": "eslint . -c eslint.config.mjs",
     "lint:tsc": "tsc",
     "test": "vitest run",
-    "fix": "run-s fix:prettier fix:eslint",
+    "fix": "run-z fix:prettier fix:eslint",
     "fix:eslint": "eslint . -c eslint.config.mjs --fix",
     "fix:prettier": "prettier --write src"
   },
@@ -26,7 +23,6 @@
     "@book000/eslint-config": "1.15.4",
     "@book000/node-utils": "1.24.268",
     "@types/node": "24.13.2",
-    "@vercel/ncc": "0.44.1",
     "eslint": "10.6.0",
     "eslint-config-standard": "17.1.0",
     "eslint-plugin-import": "2.32.0",
@@ -34,10 +30,11 @@
     "eslint-plugin-promise": "7.3.0",
     "prettier": "3.9.4",
     "puppeteer-core": "25.2.1",
+    "run-z": "2.1.0",
     "ts-node": "10.9.2",
     "ts-node-dev": "2.0.0",
+    "tsconfig-paths": "4.2.0",
     "typescript": "6.0.3",
-    "vitest": "4.1.9",
-    "yarn-run-all": "3.1.1"
+    "vitest": "4.1.9"
   }
 }
