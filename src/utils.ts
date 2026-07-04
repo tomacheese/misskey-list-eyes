@@ -299,7 +299,9 @@ async function revealSensitiveFiles(
   const logger = Logger.configure('revealSensitiveFiles')
 
   for (const fileId of sensitiveFileIds) {
-    const mediaElement = await article.$(`div[data-id="${fileId}"]`)
+    // タグ名（div）を固定すると misskey.io 側の要素種別変更で壊れうるため、
+    // data-id 属性のみで特定する
+    const mediaElement = await article.$(`[data-id="${fileId}"]`)
     if (!mediaElement) {
       logger.warn(
         `⚠️ Sensitive media element not found for fileId=${fileId}. Continuing without reveal.`
@@ -342,8 +344,12 @@ async function captureNote(
  * downloadNotePreviewImage の戻り値。
  */
 export interface DownloadNotePreviewImageResult {
-  /** 撮影した画像の絶対パス。本体 article の特定に失敗した場合は null */
-  imagePath: string | null
+  /**
+   * 撮影した画像の絶対パス。
+   * 本体 article の特定失敗など撮影不能な場合は null を返さず
+   * NoteElementNotFoundError 等の例外を送出するため、常に成功時の値が入る
+   */
+  imagePath: string
 }
 
 /**

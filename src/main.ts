@@ -110,7 +110,7 @@ async function main() {
       const expectedText = note.cw ?? note.text ?? ''
 
       logger.info(`📷 Downloading image: ${url}`)
-      let imagePath: string | null
+      let imagePath: string
       try {
         const result = await downloadNotePreviewImage(
           browser,
@@ -126,11 +126,6 @@ async function main() {
         // ここで捕捉して次のノートへ進む。Notified.addNotified を呼ばないため
         // 次回 cron 実行時に再度リトライされる
         logger.warn(`⚠️ Failed to download image: ${url}`, error as Error)
-        continue
-      }
-
-      if (!imagePath) {
-        logger.warn(`📝 Failed to download image: ${url}`)
         continue
       }
 
