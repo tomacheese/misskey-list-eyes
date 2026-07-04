@@ -45,20 +45,15 @@ Git Worktree を使用する場合は、以下の構成にしてください。
 ## 開発コマンド
 ```bash
 # 依存関係インストール
-yarn install
+pnpm install
 
 # 実行・開発
-yarn start
-yarn dev
-
-# ビルド・パッケージング
-yarn package
-yarn compile
-yarn clean
+pnpm start
+pnpm dev
 
 # Lint/Format
-yarn lint
-yarn fix
+pnpm lint
+pnpm fix
 ```
 
 ## アーキテクチャと主要ファイル
