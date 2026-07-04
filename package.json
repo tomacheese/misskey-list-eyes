@@ -8,8 +8,8 @@
   "packageManager": "pnpm@11.9.0+sha512.bd682d5d03fe525ef7c9fd6780c6884d1e756ac4c9c9fe00c538782824310dcf90e3ddc4f53835f06dfaebd5085e41855e0bcbb3b60de2ac5bbab89e5036f03b",
   "scripts": {
     "preinstall": "npx only-allow pnpm",
-    "start": "ts-node -r tsconfig-paths/register ./src/main.ts",
-    "dev": "ts-node-dev --poll -r tsconfig-paths/register ./src/main.ts",
+    "start": "tsx ./src/main.ts",
+    "dev": "tsx watch ./src/main.ts",
     "lint": "run-z lint:prettier,lint:eslint,lint:tsc",
     "lint:prettier": "prettier --check src",
     "lint:eslint": "eslint . -c eslint.config.mjs",
@@ -31,9 +31,7 @@
     "prettier": "3.9.4",
     "puppeteer-core": "25.2.1",
     "run-z": "2.1.0",
-    "ts-node": "10.9.2",
-    "ts-node-dev": "2.0.0",
-    "tsconfig-paths": "4.2.0",
+    "tsx": "4.22.4",
     "typescript": "6.0.3",
     "vitest": "4.1.9"
   }

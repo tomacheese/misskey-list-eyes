@@ -3,7 +3,7 @@ set -e
 
 while :
 do
-  ./node_modules/.bin/ts-node -r tsconfig-paths/register ./src/main.ts || true
+  ./node_modules/.bin/tsx ./src/main.ts || true
 
   # wait 5 minutes
   echo Waiting 5 minutes...

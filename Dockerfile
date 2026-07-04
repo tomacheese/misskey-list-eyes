@@ -19,7 +19,7 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm fetch && \
 COPY tsconfig.json ./
 COPY src src
 
-# ビルド時に型エラーを検出し、ts-node による実行時コンパイルエラーを未然に防ぐ
+# ビルド時に型エラーを検出し、tsx による実行時コンパイルエラーを未然に防ぐ
 RUN pnpm exec tsc --noEmit
 
 FROM zenika/alpine-chrome:with-puppeteer-xvfb AS runner
