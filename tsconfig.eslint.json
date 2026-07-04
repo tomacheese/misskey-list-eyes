@@ -4,5 +4,5 @@
     "rootDir": ".",
     "noEmit": true
   },
-  "include": ["src/**/*", "jest.config.js", "jest.mocks/**/*"]
+  "include": ["src/**/*", "vitest.config.ts"]
 }

@@ -1,4 +1,5 @@
 import type { ElementHandle, Page } from 'puppeteer-core'
+import { describe, expect, it, vi, type Mock } from 'vitest'
 import {
   NoteElementNotFoundError,
   selectNoteArticleIndex,
@@ -93,10 +94,10 @@ describe('selectNoteArticleIndex', () => {
 function createFakeArticleHandle(candidate: {
   hasScrollAnchorAncestor: boolean
   textContent: string
-}): { handle: ElementHandle; dispose: jest.Mock } {
-  const dispose = jest.fn().mockResolvedValue(undefined)
+}): { handle: ElementHandle; dispose: Mock } {
+  const dispose = vi.fn().mockResolvedValue(undefined)
   const handle = {
-    evaluate: jest.fn().mockResolvedValue(candidate),
+    evaluate: vi.fn().mockResolvedValue(candidate),
     dispose
   } as unknown as ElementHandle
   return { handle, dispose }
@@ -108,12 +109,12 @@ describe('waitForNoteElement', () => {
       hasScrollAnchorAncestor: false,
       textContent: 'sorausa @sorausa ねこ'
     })
-    const reload = jest.fn().mockResolvedValue(undefined)
+    const reload = vi.fn().mockResolvedValue(undefined)
     const page = {
-      waitForSelector: jest.fn().mockResolvedValue(undefined),
-      $$: jest.fn().mockResolvedValue([target.handle]),
+      waitForSelector: vi.fn().mockResolvedValue(undefined),
+      $$: vi.fn().mockResolvedValue([target.handle]),
       reload,
-      screenshot: jest.fn().mockResolvedValue(undefined)
+      screenshot: vi.fn().mockResolvedValue(undefined)
     } as unknown as Page
 
     const result = await waitForNoteElementForTesting(page, 'noteId1', 'ねこ')
@@ -132,10 +133,10 @@ describe('waitForNoteElement', () => {
       textContent: 'sorausa @sorausa ねこ'
     })
     const page = {
-      waitForSelector: jest.fn().mockResolvedValue(undefined),
-      $$: jest.fn().mockResolvedValue([sidebar.handle, target.handle]),
-      reload: jest.fn().mockResolvedValue(undefined),
-      screenshot: jest.fn().mockResolvedValue(undefined)
+      waitForSelector: vi.fn().mockResolvedValue(undefined),
+      $$: vi.fn().mockResolvedValue([sidebar.handle, target.handle]),
+      reload: vi.fn().mockResolvedValue(undefined),
+      screenshot: vi.fn().mockResolvedValue(undefined)
     } as unknown as Page
 
     const result = await waitForNoteElementForTesting(page, 'noteId4', 'ねこ')
@@ -146,11 +147,11 @@ describe('waitForNoteElement', () => {
   })
 
   it('article 自体が見つからない場合、最大3回リトライした後 NoteElementNotFoundError を投げる', async () => {
-    const reload = jest.fn().mockResolvedValue(undefined)
-    const screenshot = jest.fn().mockResolvedValue(undefined)
+    const reload = vi.fn().mockResolvedValue(undefined)
+    const screenshot = vi.fn().mockResolvedValue(undefined)
     const page = {
-      waitForSelector: jest.fn().mockRejectedValue(new Error('timeout')),
-      $$: jest.fn().mockResolvedValue([]),
+      waitForSelector: vi.fn().mockRejectedValue(new Error('timeout')),
+      $$: vi.fn().mockResolvedValue([]),
       reload,
       screenshot
     } as unknown as Page
@@ -173,12 +174,12 @@ describe('waitForNoteElement', () => {
       hasScrollAnchorAncestor: true,
       textContent: '無関係なノート'
     })
-    const reload = jest.fn().mockResolvedValue(undefined)
+    const reload = vi.fn().mockResolvedValue(undefined)
     const page = {
-      waitForSelector: jest.fn().mockResolvedValue(undefined),
-      $$: jest.fn().mockResolvedValue([sidebar.handle]),
+      waitForSelector: vi.fn().mockResolvedValue(undefined),
+      $$: vi.fn().mockResolvedValue([sidebar.handle]),
       reload,
-      screenshot: jest.fn().mockResolvedValue(undefined)
+      screenshot: vi.fn().mockResolvedValue(undefined)
     } as unknown as Page
 
     await expect(

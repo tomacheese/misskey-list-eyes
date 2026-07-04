@@ -28,7 +28,7 @@
     "paths": {
       "@/*": ["./src/*"]
     },
-    "types": ["node", "jest"]
+    "types": ["node"]
   },
   "include": ["src/**/*"]
 }

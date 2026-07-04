@@ -17,7 +17,7 @@
     "lint:prettier": "prettier --check src",
     "lint:eslint": "eslint . -c eslint.config.mjs",
     "lint:tsc": "tsc",
-    "test": "jest",
+    "test": "vitest run",
     "fix": "run-s fix:prettier fix:eslint",
     "fix:eslint": "eslint . -c eslint.config.mjs --fix",
     "fix:prettier": "prettier --write src"
@@ -25,7 +25,6 @@
   "devDependencies": {
     "@book000/eslint-config": "1.15.4",
     "@book000/node-utils": "1.24.250",
-    "@types/jest": "30.0.0",
     "@types/node": "24.13.2",
     "@vercel/ncc": "0.44.0",
     "eslint": "10.5.0",
@@ -33,13 +32,12 @@
     "eslint-plugin-import": "2.32.0",
     "eslint-plugin-n": "18.2.1",
     "eslint-plugin-promise": "7.3.0",
-    "jest": "30.4.2",
     "prettier": "3.9.0",
     "puppeteer-core": "25.2.1",
-    "ts-jest": "29.4.11",
     "ts-node": "10.9.2",
     "ts-node-dev": "2.0.0",
     "typescript": "6.0.3",
+    "vitest": "4.1.9",
     "yarn-run-all": "3.1.1"
   }
 }
