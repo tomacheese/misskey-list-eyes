@@ -13,12 +13,14 @@ WORKDIR /app
 
 COPY pnpm-lock.yaml package.json pnpm-workspace.yaml ./
 
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm fetch
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm fetch && \
+  pnpm install --frozen-lockfile --offline
 
 COPY tsconfig.json ./
 COPY src src
 
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile --offline
+# ビルド時に型エラーを検出し、ts-node による実行時コンパイルエラーを未然に防ぐ
+RUN pnpm exec tsc --noEmit
 
 FROM zenika/alpine-chrome:with-puppeteer-xvfb AS runner
 
@@ -38,11 +40,10 @@ RUN apk upgrade --no-cache --available && \
 
 WORKDIR /app
 
-# puppeteer-core@25.2.1 は ESM 専用パッケージであり、ランナーに同梱の Node.js (v20.15.1) では
-# require() による同期解決に対応していないため、builder ステージの Node.js 24 系バイナリを利用する
+# puppeteer-core は ESM 専用パッケージであり、ランナーに同梱の Node.js では require() による
+# 同期解決に対応していないバージョンのため、builder ステージの Node.js 24 系バイナリを利用する
 COPY --from=builder /usr/local/bin/node /usr/local/bin/node
 
-# builder ステージから必要なファイルのみをコピー
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/tsconfig.json ./
 COPY --from=builder /app/node_modules ./node_modules
