@@ -25,18 +25,15 @@
 ## 開発コマンド
 ```bash
 # 依存関係インストール
-yarn install
+pnpm install
 
 # 開発・実行
-yarn dev
-yarn start
-
-# ビルド
-yarn package
+pnpm dev
+pnpm start
 
 # チェック・修正
-yarn lint
-yarn fix
+pnpm lint
+pnpm fix
 ```
 
 ## 注意事項

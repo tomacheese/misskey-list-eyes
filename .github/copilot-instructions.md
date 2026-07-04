@@ -21,27 +21,24 @@
 - 言語: TypeScript
 - 実行環境: Node.js (ts-node, ts-node-dev)
 - ライブラリ: Puppeteer (スクリーンショット), Axios (API 通信), @book000/node-utils (Logger)
-- パッケージマネージャー: yarn
+- パッケージマネージャー: pnpm
 
 ## 開発コマンド
 ```bash
 # 依存関係のインストール
-yarn install
+pnpm install
 
 # 開発（ホットリロードあり）
-yarn dev
+pnpm dev
 
 # 実行
-yarn start
-
-# ビルド（配布用パッケージの作成）
-yarn package
+pnpm start
 
 # Lint チェック
-yarn lint
+pnpm lint
 
 # Lint 自動修正
-yarn fix
+pnpm fix
 ```
 
 ## コーディング規約

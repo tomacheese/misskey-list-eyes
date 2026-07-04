@@ -42,13 +42,13 @@ services:
 
 ```bash
 # 依存関係インストール
-yarn install
+pnpm install
 
 # テスト実行
-yarn test
+pnpm test
 
 # Lint
-yarn lint
+pnpm lint
 ```
 
 ## License

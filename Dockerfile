@@ -1,17 +1,26 @@
 FROM node:24-alpine AS builder
 
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME/bin:$PATH"
+
+# hadolint ignore=DL3018
+RUN apk update && \
+  apk upgrade && \
+  npm install -g corepack@latest && \
+  corepack enable
+
 WORKDIR /app
 
-COPY package.json yarn.lock ./
+COPY pnpm-lock.yaml package.json pnpm-workspace.yaml ./
 
-RUN echo network-timeout 600000 > .yarnrc && \
-  yarn install --frozen-lockfile && \
-  yarn cache clean
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm fetch && \
+  pnpm install --frozen-lockfile --offline
 
-COPY src/ src/
-COPY tsconfig.json tsconfig.build.json .
+COPY tsconfig.json ./
+COPY src src
 
-RUN yarn package
+# ビルド時に型エラーを検出し、tsx による実行時コンパイルエラーを未然に防ぐ
+RUN pnpm exec tsc --noEmit
 
 FROM zenika/alpine-chrome:with-puppeteer-xvfb AS runner
 
@@ -31,7 +40,14 @@ RUN apk upgrade --no-cache --available && \
 
 WORKDIR /app
 
-COPY --from=builder /app/output .
+# puppeteer-core は ESM 専用パッケージであり、ランナーに同梱の Node.js では require() による
+# 同期解決に対応していないバージョンのため、builder ステージの Node.js 24 系バイナリを利用する
+COPY --from=builder /usr/local/bin/node /usr/local/bin/node
+
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/tsconfig.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/src ./src
 
 COPY entrypoint.sh .
 RUN chmod +x entrypoint.sh
