@@ -38,6 +38,10 @@ RUN apk upgrade --no-cache --available && \
 
 WORKDIR /app
 
+# puppeteer-core@25.2.1 は ESM 専用パッケージであり、ランナーに同梱の Node.js (v20.15.1) では
+# require() による同期解決に対応していないため、builder ステージの Node.js 24 系バイナリを利用する
+COPY --from=builder /usr/local/bin/node /usr/local/bin/node
+
 # builder ステージから必要なファイルのみをコピー
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/tsconfig.json ./
