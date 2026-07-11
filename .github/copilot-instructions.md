@@ -19,8 +19,10 @@
 
 ## 技術スタック
 - 言語: TypeScript
-- 実行環境: Node.js (ts-node, ts-node-dev)
-- ライブラリ: Puppeteer (スクリーンショット), Axios (API 通信), @book000/node-utils (Logger)
+- 実行環境: Node.js。TypeScript の実行には tsx を使用する（`pnpm start` / `pnpm dev`）。
+- HTTP 通信: ネイティブの `fetch` を使用する（外部の HTTP クライアントライブラリは導入していない）。
+- ライブラリ: puppeteer-core (スクリーンショット), @book000/node-utils (Logger)
+- テスト: Vitest
 - パッケージマネージャー: pnpm
 
 ## 開発コマンド
@@ -34,7 +36,10 @@ pnpm dev
 # 実行
 pnpm start
 
-# Lint チェック
+# テスト
+pnpm test
+
+# Lint チェック（prettier / eslint / tsc）
 pnpm lint
 
 # Lint 自動修正
@@ -45,6 +50,13 @@ pnpm fix
 - TypeScript の `skipLibCheck` を使用したエラー回避は禁止。
 - 関数やインターフェースには JSDoc 形式の docstring を日本語で記載することを推奨する（新規追加時は付与）。
 - 命名規則はプロジェクトの既存のコード（camelCase）に従う。
+- HTTP 通信は `fetch` を用いる。新たに axios 等の HTTP クライアントを追加しない。
+
+## レビュー時の重点確認事項
+- Misskey API / Discord Webhook のレスポンスに対するエラーハンドリングが実装されているか。
+- Puppeteer で起動したブラウザが確実にクローズされ、リソースがリークしていないか。
+- 機密情報（トークン、Webhook URL 等）がログや例外メッセージに漏れていないか。
+- ロジックを変更・追加した場合、対応する Vitest テストが追加/更新されているか。
 
 ## セキュリティ / 機密情報
 - `INSTANCE_DOMAIN`, `LIST_ID`, `API_ACCESS_TOKEN`, `DISCORD_WEBHOOK_URL` などの機密情報をコードに含めたり、コミットしたりしない。
