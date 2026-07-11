@@ -37,10 +37,8 @@ Git Worktree を使用する場合は、以下の構成にしてください。
 - TypeScript の `skipLibCheck` による回避は禁止。
 - 関数やインターフェースには JSDoc 形式の docstring を日本語で記載することを推奨する（新規追加時は付与）。
 
-## 相談ルール
-- **Codex CLI**: 実装レビュー、局所設計、整合性確認。
-- **Gemini CLI**: 外部仕様、最新情報の確認。
-- **指摘への対応**: 指摘（信頼度 50 以上）には必ず対応し、黙殺しない。
+## レビュー指摘への対応
+- レビューでの指摘（信頼度 50 以上）には必ず対応し、黙殺しない。
 
 ## 開発コマンド
 ```bash
@@ -48,20 +46,31 @@ Git Worktree を使用する場合は、以下の構成にしてください。
 pnpm install
 
 # 実行・開発
-pnpm start
-pnpm dev
+pnpm start   # tsx で src/main.ts を実行
+pnpm dev     # tsx watch でホットリロード
+
+# テスト
+pnpm test    # vitest run
 
 # Lint/Format
-pnpm lint
-pnpm fix
+pnpm lint    # prettier --check, eslint, tsc をまとめて実行
+pnpm fix     # prettier --write, eslint --fix
 ```
 
+## テスト
+- テストランナーは Vitest。テストは `src/*.test.ts` に配置する（例: `src/utils.test.ts`）。
+- `pnpm test` で実行する。
+
 ## アーキテクチャと主要ファイル
-- `src/main.ts`: エントリーポイント、メインロジック。
+- `src/main.ts`: エントリーポイント、メインロジック。`fetch` で Misskey API を呼び出す。
 - `src/misskey.ts`: Misskey API の型定義。
-- `src/discord.ts`: Discord Webhook 連携。
-- `src/notified.ts`: 通知済みノートの管理。
-- `src/utils.ts`: Puppeteer の初期化や画像保存などのユーティリティ。
+- `src/discord.ts`: Discord Webhook 連携（`fetch` で送信）。
+- `src/notified.ts`: 通知済みノートの管理。保存先は `data/notified.json`（デフォルト、`NOTIFIED_PATH` 環境変数で上書き可能）。
+- `src/utils.ts`: Puppeteer (`puppeteer-core`) の初期化や画像保存などのユーティリティ。
+
+## セキュリティ / 機密情報
+- `INSTANCE_DOMAIN`, `LIST_ID`, `API_ACCESS_TOKEN`, `DISCORD_WEBHOOK_URL` などの機密情報をコードに含めたりコミットしたりしない。
+- ログに機密情報や個人情報を出力しない。
 
 ## 作業チェックリスト
 
