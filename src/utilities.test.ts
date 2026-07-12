@@ -4,7 +4,7 @@ import {
   NoteElementNotFoundError,
   selectNoteArticleIndex,
   waitForNoteElementForTesting
-} from './utils'
+} from './utilities'
 
 describe('selectNoteArticleIndex', () => {
   it('候補が0件の場合は null を返す', () => {

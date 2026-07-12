@@ -188,22 +188,26 @@ async function waitForNoteElement(
         await Promise.all(
           articleHandles
             .filter((_, index) => index !== selection.index)
-            .map((handle) =>
-              handle.dispose().catch(() => {
+            .map(async (handle) => {
+              try {
+                await handle.dispose()
+              } catch {
                 logger.warn('⚠️ Failed to dispose unused article handle')
-              })
-            )
+              }
+            })
         )
         return articleHandles[selection.index]
       }
 
       // 本体を特定できなかった場合は全ての候補が不要になるため破棄する
       await Promise.all(
-        articleHandles.map((handle) =>
-          handle.dispose().catch(() => {
+        articleHandles.map(async (handle) => {
+          try {
+            await handle.dispose()
+          } catch {
             logger.warn('⚠️ Failed to dispose unused article handle')
-          })
-        )
+          }
+        })
       )
 
       logger.warn(
@@ -217,11 +221,11 @@ async function waitForNoteElement(
 
     if (isLastAttempt) {
       const imageFullPath = `/data/${noteId}.full.png` as const
-      await page
-        .screenshot({ path: imageFullPath, fullPage: true })
-        .catch(() => {
-          logger.error(`🚨 Failed to capture full page screenshot`)
-        })
+      try {
+        await page.screenshot({ path: imageFullPath, fullPage: true })
+      } catch {
+        logger.error(`🚨 Failed to capture full page screenshot`)
+      }
       throw new NoteElementNotFoundError(noteId)
     }
 
@@ -310,10 +314,16 @@ async function revealSensitiveFiles(
     }
 
     await mediaElement.click()
-    await page.waitForSelector('.pswp', { timeout: 5000 }).catch(() => {
+    try {
+      await page.waitForSelector('.pswp', { timeout: 5000 })
+    } catch {
       logger.warn(`⚠️ Lightbox did not open for fileId=${fileId}. Continuing.`)
-    })
-    await page.keyboard.press('Escape').catch(() => undefined)
+    }
+    try {
+      await page.keyboard.press('Escape')
+    } catch {
+      // ライトボックスが開いていない場合は Escape 送信が失敗しうるが、無視してよい
+    }
   }
 }
 
@@ -412,8 +422,10 @@ export async function downloadNotePreviewImage(
     return { imagePath }
   } finally {
     // ページを確実に閉じることで、複数ノート処理時のページリーク（メモリ肥大化）を防ぐ
-    await page.close().catch(() => {
+    try {
+      await page.close()
+    } catch {
       logger.warn('⚠️ Failed to close page')
-    })
+    }
   }
 }

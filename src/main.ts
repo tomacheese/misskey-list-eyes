@@ -3,7 +3,7 @@ import { DiscordApi } from './discord'
 import { Logger } from '@book000/node-utils'
 import { NotesUserListTimelineResponse } from './misskey'
 import { Notified } from './notified'
-import { downloadNotePreviewImage, initPuppeteerBrowser } from './utils'
+import { downloadNotePreviewImage, initPuppeteerBrowser } from './utilities'
 
 interface IEnvironment extends NodeJS.ProcessEnv {
   INSTANCE_DOMAIN: string
@@ -32,7 +32,7 @@ function checkEnvironment() {
 }
 
 async function getUserListTimeline(accessToken: string, listId: string) {
-  const res = await fetch(
+  const response = await fetch(
     `https://${process.env.INSTANCE_DOMAIN}/api/notes/user-list-timeline`,
     {
       method: 'POST',
@@ -46,12 +46,12 @@ async function getUserListTimeline(accessToken: string, listId: string) {
       })
     }
   )
-  if (!res.ok) {
+  if (!response.ok) {
     throw new Error(
-      `Failed to get user list timeline: ${res.status} ${res.statusText}`
+      `Failed to get user list timeline: ${response.status} ${response.statusText}`
     )
   }
-  return (await res.json()) as NotesUserListTimelineResponse
+  return (await response.json()) as NotesUserListTimelineResponse
 }
 
 async function main() {
@@ -158,8 +158,6 @@ async function main() {
 }
 
 ;(async () => {
-  const logger = Logger.configure('main')
-  await main().catch((error: unknown) => {
-    logger.error('Error', error as Error)
-  })
+  // main() 内部で全ての例外を catch しているため、ここでの再捕捉は不要
+  await main()
 })()

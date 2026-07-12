@@ -94,12 +94,12 @@ export class DiscordApi {
       new Blob([arraybuffer]),
       `${isSpoiler ? 'SPOILER_' : ''}image.png`
     )
-    const res = await fetch(this.webhookUrl, {
+    const response = await fetch(this.webhookUrl, {
       method: 'POST',
       body: formData
     })
-    if (!res.ok) {
-      throw new Error(`Failed to send message to Discord: ${res.status}`)
+    if (!response.ok) {
+      throw new Error(`Failed to send message to Discord: ${response.status}`)
     }
   }
 }
