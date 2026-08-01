@@ -82,7 +82,27 @@ export function selectNoteArticleIndex(
   }
 }
 
-export async function initPuppeteerBrowser() {
+const PUPPETEER_LAUNCH_TIMEOUT_MS = 60_000
+const PUPPETEER_LAUNCH_MAX_ATTEMPTS = 3
+// puppeteer は launch 失敗時、CDP 接続未確立のプロセスを最大5秒待って
+// SIGKILL する（BrowserLauncher の graceful shutdown 猶予）。
+// この猶予より短い間隔で再 launch すると、旧プロセスの終了と新プロセスの
+// 起動がリソースを奪い合い、再びタイムアウトを誘発しうるため、
+// 猶予時間より余裕を持たせた値にする
+const PUPPETEER_LAUNCH_RETRY_DELAY_MS = 10_000
+
+/**
+ * Puppeteer（Chromium）を起動する。
+ *
+ * Raspberry Pi 等のリソースが逼迫しやすい実行環境では、他プロセスとの
+ * 競合により Chromium の起動（WS エンドポイント URL の出力）が puppeteer
+ * のデフォルトタイムアウトを超えることがある。そのためタイムアウトを
+ * {@link PUPPETEER_LAUNCH_TIMEOUT_MS} に延長した上で、それでも失敗する
+ * 一時的な事象に備えて最大 {@link PUPPETEER_LAUNCH_MAX_ATTEMPTS} 回まで
+ * リトライする。
+ * @returns 起動した Puppeteer の Browser インスタンス
+ */
+export async function initPuppeteerBrowser(): Promise<Browser> {
   const puppeteerArguments = [
     '--no-sandbox',
     '--disable-setuid-sandbox',
@@ -94,15 +114,37 @@ export async function initPuppeteerBrowser() {
     '--lang=ja',
     '--window-size=1920,1080'
   ]
-  return await puppeteer.launch({
-    headless: true,
-    executablePath: '/usr/bin/chromium-browser',
-    args: puppeteerArguments,
-    defaultViewport: {
-      width: 1920,
-      height: 1080
+  const logger = Logger.configure('initPuppeteerBrowser')
+
+  for (let attempt = 1; attempt <= PUPPETEER_LAUNCH_MAX_ATTEMPTS; attempt++) {
+    try {
+      return await puppeteer.launch({
+        headless: true,
+        executablePath: '/usr/bin/chromium-browser',
+        args: puppeteerArguments,
+        defaultViewport: {
+          width: 1920,
+          height: 1080
+        },
+        timeout: PUPPETEER_LAUNCH_TIMEOUT_MS
+      })
+    } catch (error) {
+      const isLastAttempt = attempt === PUPPETEER_LAUNCH_MAX_ATTEMPTS
+      if (isLastAttempt) {
+        throw error
+      }
+      logger.warn(
+        `🔄 Failed to launch Puppeteer browser. (attempt ${attempt}/${PUPPETEER_LAUNCH_MAX_ATTEMPTS})`,
+        error as Error
+      )
+      await new Promise<void>((resolve) =>
+        setTimeout(resolve, PUPPETEER_LAUNCH_RETRY_DELAY_MS)
+      )
     }
-  })
+  }
+
+  // PUPPETEER_LAUNCH_MAX_ATTEMPTS >= 1 である限りここには到達しない
+  throw new Error('Failed to launch Puppeteer browser')
 }
 
 /**

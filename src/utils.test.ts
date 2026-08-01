@@ -1,10 +1,31 @@
-import type { ElementHandle, Page } from 'puppeteer-core'
-import { describe, expect, it, vi, type Mock } from 'vitest'
+import type {
+  default as puppeteer,
+  Browser,
+  ElementHandle,
+  Page
+} from 'puppeteer-core'
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+  type Mock
+} from 'vitest'
 import {
   NoteElementNotFoundError,
+  initPuppeteerBrowser,
   selectNoteArticleIndex,
   waitForNoteElementForTesting
 } from './utils'
+
+const { launchMock } = vi.hoisted(() => ({
+  launchMock: vi.fn<typeof puppeteer.launch>()
+}))
+vi.mock('puppeteer-core', () => ({
+  default: { launch: launchMock }
+}))
 
 describe('selectNoteArticleIndex', () => {
   it('候補が0件の場合は null を返す', () => {
@@ -188,5 +209,65 @@ describe('waitForNoteElement', () => {
     expect(reload).toHaveBeenCalledTimes(2)
     // 本体を特定できなかった場合は全候補を毎試行 dispose する
     expect(sidebar.dispose).toHaveBeenCalledTimes(3)
+  })
+})
+
+describe('initPuppeteerBrowser', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+    launchMock.mockReset()
+  })
+
+  it('起動に成功すれば即座に Browser を返す', async () => {
+    const browser = {} as Browser
+    launchMock.mockResolvedValueOnce(browser)
+
+    const result = await initPuppeteerBrowser()
+
+    expect(result).toBe(browser)
+    expect(launchMock).toHaveBeenCalledTimes(1)
+    expect(launchMock).toHaveBeenCalledWith(
+      expect.objectContaining({ timeout: 60_000 })
+    )
+  })
+
+  it('一時的な失敗の後に成功すればリトライして Browser を返す', async () => {
+    const browser = {} as Browser
+    launchMock
+      .mockRejectedValueOnce(new Error('timeout'))
+      .mockResolvedValueOnce(browser)
+
+    const promise = initPuppeteerBrowser()
+    // リトライ前の待機（10秒）が経過するまでは次の launch が呼ばれないことを確認する
+    await vi.advanceTimersByTimeAsync(9999)
+    expect(launchMock).toHaveBeenCalledTimes(1)
+    await vi.advanceTimersByTimeAsync(1)
+    const result = await promise
+
+    expect(result).toBe(browser)
+    expect(launchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('最大試行回数まで失敗し続けた場合は最後のエラーを投げる', async () => {
+    const errors = [
+      new Error('1st timeout'),
+      new Error('2nd timeout'),
+      new Error('3rd timeout')
+    ]
+    launchMock
+      .mockRejectedValueOnce(errors[0])
+      .mockRejectedValueOnce(errors[1])
+      .mockRejectedValueOnce(errors[2])
+
+    const promise = initPuppeteerBrowser()
+    const assertion = expect(promise).rejects.toBe(errors[2])
+    await vi.runAllTimersAsync()
+    await assertion
+
+    expect(launchMock).toHaveBeenCalledTimes(3)
   })
 })
