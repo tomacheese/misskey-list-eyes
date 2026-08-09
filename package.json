@@ -31,7 +31,7 @@
     "prettier": "3.9.6",
     "puppeteer-core": "25.5.0",
     "run-z": "2.1.0",
-    "tsx": "4.23.8",
+    "tsx": "4.23.9",
     "typescript": "6.0.3",
     "vitest": "4.1.10"
   }
