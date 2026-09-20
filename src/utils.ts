@@ -71,15 +71,13 @@ export function selectNoteArticleIndex(
   }
 
   const lastIndex = nonSidebarIndices.at(-1)
-  if (lastIndex === undefined) {
-    // nonSidebarIndices.length === 0 は関数冒頭で return 済みのため到達しない
-    return null
-  }
-
-  return {
-    index: lastIndex,
-    isAmbiguous: true
-  }
+  // nonSidebarIndices.length === 0 は関数冒頭で return 済みのため到達しない
+  return lastIndex === undefined
+    ? null
+    : {
+        index: lastIndex,
+        isAmbiguous: true
+      }
 }
 
 const PUPPETEER_LAUNCH_TIMEOUT_MS = 60_000
