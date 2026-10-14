@@ -13,4 +13,9 @@ export default [
       },
     },
   },
+  {
+    // Config files must call defineConfig() at the top level
+    files: ['*.config.ts'],
+    rules: { 'unicorn/no-top-level-side-effects': 'off' },
+  },
 ]
