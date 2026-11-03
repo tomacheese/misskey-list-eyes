@@ -4,38 +4,37 @@ import fs from 'node:fs'
 import { Logger } from '@book000/node-utils'
 
 /**
- * ノート本体候補の article 要素についての判定用情報。
- * ブラウザコンテキストで抽出した結果を Node.js 側に渡すためのプレーンなデータ構造。
+ * Information about a candidate note article element, used to pick the main note.
+ * Plain data extracted in the browser context and passed to the Node.js side.
  */
 export interface ArticleCandidate {
-  /** タイムラインプレビューウィジェット等、サイドバー由来の要素かどうか */
+  /** Whether the element has a `data-scroll-anchor` ancestor (sidebar, not the main note) */
   hasScrollAnchorAncestor: boolean
-  /** article 要素のテキスト内容 */
+  /** Text content of the article element */
   textContent: string
 }
 
 /**
- * selectNoteArticleIndex の判定結果。
+ * Result of selectNoteArticleIndex.
  */
 export interface NoteArticleSelection {
-  /** candidates 配列内で選択された要素のインデックス */
+  /** Index of the selected element in the candidates array */
   index: number
-  /** 本文照合で一意に決定できず、フォールバックで選択した場合に true */
+  /** True if the text match was not unique and the selection is a fallback */
   isAmbiguous: boolean
 }
 
 /**
- * ノート詳細ページ内の複数の article 候補から、本体ノートの article を選択する。
+ * Select the main note's article from the candidate articles on a note detail page.
  *
- * misskey.io は未ログイン状態で /notes/:id にアクセスすると、サイドバーの
- * タイムラインプレビューウィジェット内にも無関係な article 要素が大量に
- * 描画される。これらは data-scroll-anchor 属性を持つ要素の子孫であるため、
- * まずそれらを除外し、残った候補を API 取得済みの本文（cw があれば cw、
- * なければ text）と照合して本体を特定する。
+ * When /notes/:id is opened without logging in, misskey.io also renders many unrelated
+ * article elements inside the sidebar timeline preview widget. These are descendants of an
+ * element with a data-scroll-anchor attribute, so they are excluded first, and the remaining
+ * candidates are matched against the text fetched from the API (cw if present, otherwise text).
  *
- * @param candidates - ページ内の全 article 要素から抽出した候補一覧
- * @param expectedText - 本体ノートの本文（note.cw ?? note.text ?? ''）
- * @returns 選択結果。除外後の候補が0件の場合は null
+ * @param candidates - Candidates extracted from all article elements on the page
+ * @param expectedText - Text of the main note (note.cw ?? note.text ?? '')
+ * @returns The selection, or null if no candidate remains after exclusion
  */
 export function selectNoteArticleIndex(
   candidates: ArticleCandidate[],
@@ -61,8 +60,8 @@ export function selectNoteArticleIndex(
       return { index: matchedIndices[0], isAmbiguous: false }
     }
     if (matchedIndices.length > 1) {
-      // 複数候補が本文と一致した場合は一意に特定できないため、
-      // 末尾（DOM 上で最後に出現する候補）を暫定選択しつつ isAmbiguous を立てる
+      // Multiple candidates match, so the main note cannot be identified uniquely.
+      // Tentatively pick the last one in DOM order and set isAmbiguous
       const lastMatchedIndex = matchedIndices.at(-1)
       if (lastMatchedIndex !== undefined) {
         return { index: lastMatchedIndex, isAmbiguous: true }
@@ -71,7 +70,7 @@ export function selectNoteArticleIndex(
   }
 
   const lastIndex = nonSidebarIndices.at(-1)
-  // nonSidebarIndices.length === 0 は関数冒頭で return 済みのため到達しない
+  // Unreachable: an empty nonSidebarIndices already returned at the top of the function
   return lastIndex === undefined
     ? null
     : {
@@ -82,23 +81,20 @@ export function selectNoteArticleIndex(
 
 const PUPPETEER_LAUNCH_TIMEOUT_MS = 60_000
 const PUPPETEER_LAUNCH_MAX_ATTEMPTS = 3
-// puppeteer は launch 失敗時、CDP 接続未確立のプロセスを最大5秒待って
-// SIGKILL する（BrowserLauncher の graceful shutdown 猶予）。
-// この猶予より短い間隔で再 launch すると、旧プロセスの終了と新プロセスの
-// 起動がリソースを奪い合い、再びタイムアウトを誘発しうるため、
-// 猶予時間より余裕を持たせた値にする
+// When launch fails, puppeteer waits up to 5 seconds for a process without a CDP connection
+// before sending SIGKILL (BrowserLauncher's graceful shutdown grace period).
+// Relaunching sooner than that lets the old process's shutdown and the new process's startup
+// compete for resources and can cause another timeout, so use a value well above the grace period
 const PUPPETEER_LAUNCH_RETRY_DELAY_MS = 10_000
 
 /**
- * Puppeteer（Chromium）を起動する。
+ * Launch Puppeteer (Chromium).
  *
- * Raspberry Pi 等のリソースが逼迫しやすい実行環境では、他プロセスとの
- * 競合により Chromium の起動（WS エンドポイント URL の出力）が puppeteer
- * のデフォルトタイムアウトを超えることがある。そのためタイムアウトを
- * {@link PUPPETEER_LAUNCH_TIMEOUT_MS} に延長した上で、それでも失敗する
- * 一時的な事象に備えて最大 {@link PUPPETEER_LAUNCH_MAX_ATTEMPTS} 回まで
- * リトライする。
- * @returns 起動した Puppeteer の Browser インスタンス
+ * On resource-constrained hosts such as a Raspberry Pi, contention with other processes can make
+ * Chromium's startup (printing the WS endpoint URL) exceed puppeteer's default timeout. The timeout
+ * is therefore extended to {@link PUPPETEER_LAUNCH_TIMEOUT_MS}, and launching is retried up to
+ * {@link PUPPETEER_LAUNCH_MAX_ATTEMPTS} times to absorb transient failures.
+ * @returns The launched Puppeteer Browser instance
  */
 export async function initPuppeteerBrowser(): Promise<Browser> {
   const puppeteerArguments = [
@@ -141,12 +137,12 @@ export async function initPuppeteerBrowser(): Promise<Browser> {
     }
   }
 
-  // PUPPETEER_LAUNCH_MAX_ATTEMPTS >= 1 である限りここには到達しない
+  // Unreachable as long as PUPPETEER_LAUNCH_MAX_ATTEMPTS >= 1
   throw new Error('Failed to launch Puppeteer browser')
 }
 
 /**
- * ノート本体の article 要素の特定に失敗した場合に送出されるエラー。
+ * Thrown when the main note's article element cannot be identified.
  */
 export class NoteElementNotFoundError extends Error {
   constructor(noteId: string) {
@@ -156,10 +152,10 @@ export class NoteElementNotFoundError extends Error {
 }
 
 /**
- * article 要素から selectNoteArticleIndex 用の候補情報を抽出する。
- * ElementHandle.evaluate() の引数として渡され、ブラウザコンテキストで実行される。
- * @param article - 対象の article DOM 要素
- * @returns 判定用の候補情報
+ * Extract candidate information for selectNoteArticleIndex from an article element.
+ * Passed to ElementHandle.evaluate() and executed in the browser context.
+ * @param article - The article DOM element
+ * @returns Candidate information used for selection
  */
 function extractArticleCandidate(article: Element): ArticleCandidate {
   let element: Element | null = article
@@ -180,20 +176,18 @@ function extractArticleCandidate(article: Element): ArticleCandidate {
 const WAIT_FOR_NOTE_ELEMENT_MAX_ATTEMPTS = 3
 
 /**
- * ノート詳細ページから本体ノートの article 要素を特定するまで待機する。
- * misskey.io のフロントエンド更新で DOM 構造が変わっても壊れないよう、
- * CSS Modules のハッシュ化クラス名には依存せず、サイドバー除外 + 本文照合
- * （selectNoteArticleIndex）で本体を判定する。
+ * Wait on a note detail page until the main note's article element is identified.
+ * To survive misskey.io frontend DOM changes, it does not rely on hashed CSS Modules class names;
+ * it excludes sidebar articles and matches the text (selectNoteArticleIndex).
  *
- * 最大 {@link WAIT_FOR_NOTE_ELEMENT_MAX_ATTEMPTS} 回まで、article 要素の
- * 出現待ち → 本体特定 を試行し、reload を挟みながらリトライする。
- * 全て失敗した場合は最終試行時点で全画面デバッグスクショを撮った上で
- * {@link NoteElementNotFoundError} を送出する。
+ * Up to {@link WAIT_FOR_NOTE_ELEMENT_MAX_ATTEMPTS} attempts are made (wait for articles, then
+ * identify the main one), reloading the page between attempts. If all fail, a full-page debug
+ * screenshot is taken on the last attempt and {@link NoteElementNotFoundError} is thrown.
  *
- * @param page - 対象の Puppeteer ページ
- * @param noteId - 対象ノートの ID（ログ・デバッグスクショのファイル名に使用）
- * @param expectedText - 本体ノートの本文（note.cw ?? note.text ?? ''）
- * @returns 本体ノートの article 要素の ElementHandle
+ * @param page - The Puppeteer page
+ * @param noteId - The note ID (used in logs and the debug screenshot file name)
+ * @param expectedText - Text of the main note (note.cw ?? note.text ?? '')
+ * @returns ElementHandle of the main note's article element
  */
 async function waitForNoteElement(
   page: Page,
@@ -224,7 +218,7 @@ async function waitForNoteElement(
             `⚠️ Could not uniquely identify note article by text match. Using last candidate. (attempt ${attempt}/${WAIT_FOR_NOTE_ELEMENT_MAX_ATTEMPTS})`
           )
         }
-        // 選択されなかった ElementHandle はリークしないよう破棄する
+        // Dispose unselected ElementHandles to avoid leaking them
         await Promise.all(
           articleHandles
             .filter((_, index) => index !== selection.index)
@@ -237,7 +231,7 @@ async function waitForNoteElement(
         return articleHandles[selection.index]
       }
 
-      // 本体を特定できなかった場合は全ての候補が不要になるため破棄する
+      // No main note identified, so no candidate is needed; dispose them all
       await Promise.all(
         articleHandles.map((handle) =>
           handle.dispose().catch(() => {
@@ -268,41 +262,40 @@ async function waitForNoteElement(
     await page.reload()
   }
 
-  // WAIT_FOR_NOTE_ELEMENT_MAX_ATTEMPTS >= 1 である限りここには到達しない
+  // Unreachable as long as WAIT_FOR_NOTE_ELEMENT_MAX_ATTEMPTS >= 1
   throw new NoteElementNotFoundError(noteId)
 }
 
 /**
- * waitForNoteElement のテスト専用エクスポート。
- * プロダクションコードからは呼び出さず、src/utils.test.ts からのみ利用する。
+ * Test-only export of waitForNoteElement.
+ * Not called from production code; used only by src/utils.test.ts.
  */
 export const waitForNoteElementForTesting = waitForNoteElement
 
 /**
- * 特定済みの本体ノート article 内の CW（閲覧注意）展開ボタンをクリックし、
- * 隠れている本文を表示する。
+ * Click the CW (content warning) expand button inside the identified main note's article
+ * to reveal the hidden text.
  *
- * ボタンのクラス名（xd2wm 等）は misskey.io のビルドごとに変わりうるため、
- * ボタンのテキスト内容（「もっと見る」で始まるか）で判定する。
- * ボタンが見つからない場合は警告ログを出し、CW を閉じたまま撮影を続行する
- * （無限リトライを避けるため、ここでは例外を投げない）。
+ * Button class names can change with every misskey.io build, so the button is
+ * identified by its text content (starting with 「もっと見る」, the Misskey UI label).
+ * If no button is found, a warning is logged and the capture continues with the CW closed
+ * (no exception is thrown, to avoid endless retries).
  *
- * @param article - waitForNoteElement で特定した本体ノートの article 要素
+ * @param article - The main note's article element identified by waitForNoteElement
  */
 async function revealContentWarning(article: ElementHandle): Promise<void> {
   const logger = Logger.configure('revealContentWarning')
   const buttons = await article.$$('button')
 
   for (const button of buttons) {
-    // element.textContent は仕様上 Element では null にならないが、
-    // extractArticleCandidate と同様に念のため空文字へフォールバックする
-    // （`??` は @typescript-eslint/no-unnecessary-condition に抵触するため `||` を使う）
+    // element.textContent is never null for an Element per the spec, but fall back to ''
+    // defensively as in extractArticleCandidate
+    // (`||` is used because `??` violates @typescript-eslint/no-unnecessary-condition)
     const text = await button.evaluate((element) =>
       (element.textContent || '').trim()
     )
     if (text.startsWith('もっと見る')) {
-      // Vue 側のハンドラが mousedown を購読しているため click ではなく
-      // mousedown イベントを dispatch する（既存実装を踏襲）
+      // The Vue handler listens for mousedown, so dispatch a mousedown event instead of clicking
       await button.evaluate((element) => {
         element.dispatchEvent(new Event('mousedown'))
       })
@@ -316,20 +309,16 @@ async function revealContentWarning(article: ElementHandle): Promise<void> {
 }
 
 /**
- * 特定済みの本体ノート article 内の、指定されたファイルIDに対応する
- * センシティブメディアをクリックして表示する。
+ * Click the sensitive media matching the given file IDs inside the identified main note's
+ * article to reveal it.
  *
- * クリック対象は misskey.io がメディア添付要素に付与するセマンティックな
- * data-id 属性（Misskey API の file.id と一致する）で特定するため、
- * CSS Modules のハッシュ化クラス名には依存しない。クリックすると
- * PhotoSwipe のライトボックスが開くため、Escape キー送信で閉じる
- * （PhotoSwipe はサードパーティ製ライブラリであり、misskey.io 自身の
- * ビルドでクラス名がハッシュ化されるクラス名とは異なり比較的安定している
- * ため、ライトボックスの出現待ちには .pswp セレクタを使う）。
+ * Targets are located by the semantic data-id attribute (equal to the Misskey API's file.id).
+ * Clicking opens a PhotoSwipe lightbox, closed with the Escape key; PhotoSwipe's `.pswp` class
+ * is stable, unlike misskey.io's hashed class names.
  *
- * @param article - waitForNoteElement で特定した本体ノートの article 要素
- * @param page - 対象の Puppeteer ページ（Escape キー送信に使用）
- * @param sensitiveFileIds - note.files のうち isSensitive が true のファイルID一覧
+ * @param article - The main note's article element identified by waitForNoteElement
+ * @param page - The Puppeteer page (used to send the Escape key)
+ * @param sensitiveFileIds - IDs of note.files entries whose isSensitive is true
  */
 async function revealSensitiveFiles(
   article: ElementHandle,
@@ -339,8 +328,8 @@ async function revealSensitiveFiles(
   const logger = Logger.configure('revealSensitiveFiles')
 
   for (const fileId of sensitiveFileIds) {
-    // タグ名（div）を固定すると misskey.io 側の要素種別変更で壊れうるため、
-    // data-id 属性のみで特定する
+    // Do not pin the tag name (div), which could break if misskey.io changes the element type;
+    // match on the data-id attribute only
     const mediaElement = await article.$(`[data-id="${fileId}"]`)
     if (!mediaElement) {
       logger.warn(
@@ -358,13 +347,13 @@ async function revealSensitiveFiles(
 }
 
 /**
- * 特定済みの本体ノート article 要素をスクリーンショットとして保存する。
- * ElementHandle.screenshot() を使うことで、クリップ範囲の手動計算
- * （getBoundingClientRect）を不要にする。
+ * Save the identified main note's article element as a screenshot.
+ * Using ElementHandle.screenshot() avoids computing the clip region manually
+ * (getBoundingClientRect).
  *
- * @param article - waitForNoteElement で特定した本体ノートの article 要素
- * @param noteId - 保存ファイル名に使用するノートID
- * @returns 保存した画像の絶対パス
+ * @param article - The main note's article element identified by waitForNoteElement
+ * @param noteId - The note ID used in the saved file name
+ * @returns Absolute path of the saved image
  */
 async function captureNote(
   article: ElementHandle,
@@ -381,33 +370,31 @@ async function captureNote(
 }
 
 /**
- * downloadNotePreviewImage の戻り値。
+ * Return value of downloadNotePreviewImage.
  */
 export interface DownloadNotePreviewImageResult {
   /**
-   * 撮影した画像の絶対パス。
-   * 本体 article の特定失敗など撮影不能な場合は null を返さず
-   * NoteElementNotFoundError 等の例外を送出するため、常に成功時の値が入る
+   * Absolute path of the captured image.
+   * When capturing is impossible (e.g. the main article cannot be identified), an exception such as
+   * NoteElementNotFoundError is thrown instead of returning null, so this is always a valid path
    */
   imagePath: string
 }
 
 /**
- * 指定したノートの詳細ページにアクセスし、本体ノート部分をスクリーンショットとして
- * ダウンロードする。
+ * Open the given note's detail page and save the main note as a screenshot.
  *
- * CW（閲覧注意）・NSFW（センシティブメディア）の判定は DOM を見ずに、
- * 呼び出し元（main.ts）が Misskey API のレスポンスから計算した値を
- * 受け取って利用する。
+ * CW (content warning) and sensitive-media detection does not inspect the DOM; it uses values
+ * the caller (main.ts) computed from the Misskey API response.
  *
- * @param browser - Puppeteer の Browser インスタンス
- * @param instanceDomain - Misskey インスタンスのドメイン
- * @param noteId - 対象ノートのID
- * @param expectedText - 本体ノートの本文（note.cw ?? note.text ?? ''）。
- *   本体 article の一意特定に使用する
- * @param hasCW - 対象ノートが CW 付きかどうか（note.cw != null）
- * @param sensitiveFileIds - note.files のうち isSensitive が true のファイルID一覧
- * @returns 撮影結果
+ * @param browser - The Puppeteer Browser instance
+ * @param instanceDomain - Domain of the Misskey instance
+ * @param noteId - The target note ID
+ * @param expectedText - Text of the main note (note.cw ?? note.text ?? ''), used to identify
+ *   the main article uniquely
+ * @param hasCW - Whether the note has a CW (note.cw != null)
+ * @param sensitiveFileIds - IDs of note.files entries whose isSensitive is true
+ * @returns The capture result
  */
 export async function downloadNotePreviewImage(
   browser: Browser,
@@ -418,7 +405,6 @@ export async function downloadNotePreviewImage(
   sensitiveFileIds: string[]
 ): Promise<DownloadNotePreviewImageResult> {
   const logger = Logger.configure('downloadNotePreviewImage')
-  // /tmp がなかったら作る
   if (!fs.existsSync('/tmp')) {
     fs.mkdirSync('/tmp')
   }
@@ -451,7 +437,7 @@ export async function downloadNotePreviewImage(
 
     return { imagePath }
   } finally {
-    // ページを確実に閉じることで、複数ノート処理時のページリーク（メモリ肥大化）を防ぐ
+    // Always close the page to avoid page leaks (memory growth) when processing many notes
     await page.close().catch(() => {
       logger.warn('⚠️ Failed to close page')
     })
