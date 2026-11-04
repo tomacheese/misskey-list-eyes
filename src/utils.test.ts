@@ -28,12 +28,12 @@ vi.mock('puppeteer-core', () => ({
 }))
 
 describe('selectNoteArticleIndex', () => {
-  it('候補が0件の場合は null を返す', () => {
+  it('returns null when there are no candidates', () => {
     const result = selectNoteArticleIndex([], 'ねこ')
     expect(result).toBeNull()
   })
 
-  it('全候補がサイドバー由来（data-scroll-anchor祖先あり）の場合は null を返す', () => {
+  it('returns null when all candidates come from the sidebar (have a data-scroll-anchor ancestor)', () => {
     const result = selectNoteArticleIndex(
       [
         { hasScrollAnchorAncestor: true, textContent: '無関係なノート1' },
@@ -44,7 +44,7 @@ describe('selectNoteArticleIndex', () => {
     expect(result).toBeNull()
   })
 
-  it('非サイドバー候補が1件のみの場合は本文照合なしでそれを採用する', () => {
+  it('selects the only non-sidebar candidate without text matching', () => {
     const result = selectNoteArticleIndex(
       [
         { hasScrollAnchorAncestor: true, textContent: '無関係なノート' },
@@ -58,7 +58,7 @@ describe('selectNoteArticleIndex', () => {
     expect(result).toEqual({ index: 1, isAmbiguous: false })
   })
 
-  it('複数の非サイドバー候補があり、本文が一致するものが1件ある場合はそれを採用する', () => {
+  it('selects the single text-matching candidate among multiple non-sidebar candidates', () => {
     const result = selectNoteArticleIndex(
       [
         { hasScrollAnchorAncestor: false, textContent: '返信元ノートの本文' },
@@ -69,7 +69,7 @@ describe('selectNoteArticleIndex', () => {
     expect(result).toEqual({ index: 1, isAmbiguous: false })
   })
 
-  it('複数の非サイドバー候補があり、本文が一致するものがない場合は最後の候補を採用し isAmbiguous: true を返す', () => {
+  it('selects the last candidate with isAmbiguous: true when no non-sidebar candidate matches the text', () => {
     const result = selectNoteArticleIndex(
       [
         { hasScrollAnchorAncestor: false, textContent: '本文A' },
@@ -80,7 +80,7 @@ describe('selectNoteArticleIndex', () => {
     expect(result).toEqual({ index: 1, isAmbiguous: true })
   })
 
-  it('expectedText が空文字列で非サイドバー候補が複数ある場合は最後の候補を採用し isAmbiguous: true を返す', () => {
+  it('selects the last candidate with isAmbiguous: true when expectedText is empty and there are multiple non-sidebar candidates', () => {
     const result = selectNoteArticleIndex(
       [
         { hasScrollAnchorAncestor: false, textContent: '本文A' },
@@ -91,7 +91,7 @@ describe('selectNoteArticleIndex', () => {
     expect(result).toEqual({ index: 1, isAmbiguous: true })
   })
 
-  it('複数の非サイドバー候補があり、本文が一致するものが複数件ある場合は最後に一致した候補を採用し isAmbiguous: true を返す', () => {
+  it('selects the last matching candidate with isAmbiguous: true when multiple non-sidebar candidates match the text', () => {
     const result = selectNoteArticleIndex(
       [
         {
@@ -108,9 +108,9 @@ describe('selectNoteArticleIndex', () => {
 })
 
 /**
- * テスト用の ElementHandle フェイクを作成する。
- * evaluate は常に渡された candidate データを返す（DOM 抽出ロジック自体は対象外）。
- * dispose の呼び出し検証をしやすいよう、モック関数の参照を別途返す。
+ * Create a fake ElementHandle for tests.
+ * evaluate always returns the given candidate data (the DOM extraction logic itself is out of scope).
+ * The dispose mock is returned separately to make verifying its calls easier.
  */
 function createFakeArticleHandle(candidate: {
   hasScrollAnchorAncestor: boolean
@@ -125,7 +125,7 @@ function createFakeArticleHandle(candidate: {
 }
 
 describe('waitForNoteElement', () => {
-  it('1回目で article が1件見つかれば reload せずに ElementHandle を返す', async () => {
+  it('returns the ElementHandle without reloading when one article is found on the first attempt', async () => {
     const target = createFakeArticleHandle({
       hasScrollAnchorAncestor: false,
       textContent: 'sorausa @sorausa ねこ'
@@ -144,7 +144,7 @@ describe('waitForNoteElement', () => {
     expect(reload).not.toHaveBeenCalled()
   })
 
-  it('本体特定後、選択されなかった ElementHandle を dispose し、選択された handle は dispose しない', async () => {
+  it('disposes unselected ElementHandles but not the selected one after identifying the main note', async () => {
     const sidebar = createFakeArticleHandle({
       hasScrollAnchorAncestor: true,
       textContent: '無関係なノート'
@@ -167,7 +167,7 @@ describe('waitForNoteElement', () => {
     expect(target.dispose).not.toHaveBeenCalled()
   })
 
-  it('article 自体が見つからない場合、最大3回リトライした後 NoteElementNotFoundError を投げる', async () => {
+  it('throws NoteElementNotFoundError after retries when no article is found', async () => {
     const reload = vi.fn().mockResolvedValue(undefined)
     const screenshot = vi.fn().mockResolvedValue(undefined)
     const page = {
@@ -180,9 +180,9 @@ describe('waitForNoteElement', () => {
     await expect(
       waitForNoteElementForTesting(page, 'noteId2', 'ねこ')
     ).rejects.toThrow(NoteElementNotFoundError)
-    // 3回試行し、最後の1回を除く2回で reload が呼ばれる
+    // reload is called on every attempt except the last one
     expect(reload).toHaveBeenCalledTimes(2)
-    // 最終失敗時に全画面デバッグスクショを1回だけ撮る
+    // On final failure, take the full-page debug screenshot exactly once
     expect(screenshot).toHaveBeenCalledTimes(1)
     expect(screenshot).toHaveBeenCalledWith({
       path: '/data/noteId2.full.png',
@@ -190,7 +190,7 @@ describe('waitForNoteElement', () => {
     })
   })
 
-  it('article は見つかるがサイドバー由来のみで本体を特定できない場合もリトライする', async () => {
+  it('also retries when articles are found but all come from the sidebar', async () => {
     const sidebar = createFakeArticleHandle({
       hasScrollAnchorAncestor: true,
       textContent: '無関係なノート'
@@ -207,7 +207,7 @@ describe('waitForNoteElement', () => {
       waitForNoteElementForTesting(page, 'noteId3', 'ねこ')
     ).rejects.toThrow(NoteElementNotFoundError)
     expect(reload).toHaveBeenCalledTimes(2)
-    // 本体を特定できなかった場合は全候補を毎試行 dispose する
+    // When the main note cannot be identified, all candidates are disposed on every attempt
     expect(sidebar.dispose).toHaveBeenCalledTimes(3)
   })
 })
@@ -222,7 +222,7 @@ describe('initPuppeteerBrowser', () => {
     launchMock.mockReset()
   })
 
-  it('起動に成功すれば即座に Browser を返す', async () => {
+  it('returns the Browser immediately when launch succeeds', async () => {
     const browser = {} as Browser
     launchMock.mockResolvedValueOnce(browser)
 
@@ -235,14 +235,14 @@ describe('initPuppeteerBrowser', () => {
     )
   })
 
-  it('一時的な失敗の後に成功すればリトライして Browser を返す', async () => {
+  it('retries and returns the Browser when launch succeeds after a transient failure', async () => {
     const browser = {} as Browser
     launchMock
       .mockRejectedValueOnce(new Error('timeout'))
       .mockResolvedValueOnce(browser)
 
     const promise = initPuppeteerBrowser()
-    // リトライ前の待機（10秒）が経過するまでは次の launch が呼ばれないことを確認する
+    // Verify the next launch is not called until the pre-retry wait has elapsed
     await vi.advanceTimersByTimeAsync(9999)
     expect(launchMock).toHaveBeenCalledTimes(1)
     await vi.advanceTimersByTimeAsync(1)
@@ -252,7 +252,7 @@ describe('initPuppeteerBrowser', () => {
     expect(launchMock).toHaveBeenCalledTimes(2)
   })
 
-  it('最大試行回数まで失敗し続けた場合は最後のエラーを投げる', async () => {
+  it('throws the last error when every attempt up to the maximum fails', async () => {
     const errors = [
       new Error('1st timeout'),
       new Error('2nd timeout'),

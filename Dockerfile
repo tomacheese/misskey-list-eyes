@@ -19,7 +19,7 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm fetch && \
 COPY tsconfig.json ./
 COPY src src
 
-# ビルド時に型エラーを検出し、tsx による実行時コンパイルエラーを未然に防ぐ
+# Catch type errors at build time, before tsx hits them at runtime
 RUN pnpm exec tsc --noEmit
 
 FROM zenika/alpine-chrome:with-puppeteer-xvfb AS runner
@@ -40,8 +40,8 @@ RUN apk upgrade --no-cache --available && \
 
 WORKDIR /app
 
-# puppeteer-core は ESM 専用パッケージであり、ランナーに同梱の Node.js では require() による
-# 同期解決に対応していないバージョンのため、builder ステージの Node.js 24 系バイナリを利用する
+# puppeteer-core is an ESM-only package and the Node.js bundled with the runner image
+# does not support loading it via require(), so use the Node.js binary from the builder stage
 COPY --from=builder /usr/local/bin/node /usr/local/bin/node
 
 COPY --from=builder /app/package.json ./

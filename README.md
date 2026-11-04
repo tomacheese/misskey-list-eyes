@@ -1,15 +1,14 @@
 # misskey-list-eyes
 
-[Misskey](https://misskey-hub.net) に投稿されたノートをリスト機能を用いて収集し、Discord Webhook を用いて通知します。
+Collects notes posted on [Misskey](https://misskey-hub.net) through a Misskey list and notifies a Discord webhook with a screenshot of each note.
 
 ## Installation
 
-Docker で動作することを前提としています。Docker が動作する環境を用意してください。
+This project is designed to run in Docker. Prepare an environment where Docker works.
 
-まず、[Configuration](#configuration) を参考に必要な情報を入手してください。  
-入手した情報は `.env` に書き込んでください。
+First, obtain the required values described in [Configuration](#configuration) and write them to `.env`.
 
-その後、以下を `docker-compose.yml` に書き込みます。
+Then write the following to `docker-compose.yml`.
 
 ```yaml
 version: '3.8'
@@ -27,31 +26,30 @@ services:
     restart: always
 ```
 
-最後に、`docker-compose up --build -d` で起動します。
+Finally, start it with `docker compose up -d`. The container checks the list every 5 minutes. Notified note IDs are stored in `/data/notified.json`, so keep the `/data` volume. The first run only records the current notes without notifying.
 
 ## Configuration
 
-すべての設定は環境変数を用いて行います。
+All settings are configured with environment variables.
 
-- `INSTANCE_DOMAIN`: Misskey インスタンスのドメイン
-- `LIST_ID`: リストの ID
-- `API_ACCESS_TOKEN`: Misskey インスタンスの API アクセストークン。[Misskey Hub の記事](https://misskey-hub.net/docs/api/) を参考に入手してください。
-- `DISCORD_WEBHOOK_URL`: Discord Webhook の URL。[Discord ヘルプセンターの記事](https://support.discord.com/hc/ja/articles/228383668) を参考に入手してください。
+- `INSTANCE_DOMAIN`: Domain of the Misskey instance
+- `LIST_ID`: ID of the list to watch
+- `API_ACCESS_TOKEN`: API access token for the Misskey instance. See the [Misskey Hub documentation](https://misskey-hub.net/docs/api/) to obtain one.
+- `DISCORD_WEBHOOK_URL`: Discord webhook URL. See the [Discord Help Center article](https://support.discord.com/hc/ja/articles/228383668) (Japanese) to obtain one.
 
 ## Development
 
 ```bash
-# 依存関係インストール
+# Install dependencies
 pnpm install
 
-# テスト実行
+# Run tests
 pnpm test
 
-# Lint
+# Lint (prettier, eslint, tsc)
 pnpm lint
 ```
 
 ## License
 
-このプロジェクトのライセンスは [MIT License](LICENSE) です。  
-The license for this project is [MIT License](LICENSE).
+The license for this project is the [MIT License](LICENSE).

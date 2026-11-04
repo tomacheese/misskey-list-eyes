@@ -13,10 +13,6 @@ interface IEnvironment extends NodeJS.ProcessEnv {
 }
 
 function checkEnvironment() {
-  // process.env.INSTANCE_DOMAIN
-  // process.env.LIST_ID
-  // process.env.DISCORD_WEBHOOK_URL
-
   if (!process.env.INSTANCE_DOMAIN) {
     throw new Error('INSTANCE_DOMAIN is not set')
   }
@@ -91,7 +87,7 @@ async function main() {
         continue
       }
 
-      // リアクション分も含める関係上、投稿から5分以降のノートを通知する
+      // Wait before notifying so that reactions are included in the screenshot
       const createdAt = new Date(note.createdAt)
       const now = new Date()
       const diff = now.getTime() - createdAt.getTime()
@@ -105,8 +101,7 @@ async function main() {
       const sensitiveFileIds = note.files
         .filter((file) => file.isSensitive)
         .map((file) => file.id)
-      // note.text はメディアのみの投稿などで null になり得るため、
-      // expectedText が確実に string になるよう ?? '' でガードする
+      // note.text can be null (e.g. media-only notes); fall back to '' so expectedText is always a string
       const expectedText = note.cw ?? note.text ?? ''
 
       logger.info(`📷 Downloading image: ${url}`)
@@ -122,9 +117,8 @@ async function main() {
         )
         imagePath = result.imagePath
       } catch (error) {
-        // 1ノートの撮影失敗が他ノートの処理をブロックしないよう、
-        // ここで捕捉して次のノートへ進む。Notified.addNotified を呼ばないため
-        // 次回 cron 実行時に再度リトライされる
+        // Catch here so one note's capture failure does not block the others.
+        // Notified.addNotified is not called, so the note is retried on the next loop iteration (entrypoint.sh)
         logger.warn(`⚠️ Failed to download image: ${url}`, error as Error)
         continue
       }

@@ -1,66 +1,11 @@
 # GitHub Copilot Instructions
 
-## プロジェクト概要
-- 目的: Misskey の特定のリストのタイムラインを監視し、ノートを Discord Webhook に通知する。
-- 主な機能:
-  - Misskey API を使用したリストタイムラインの取得
-  - Puppeteer を使用したノートのスクリーンショット撮影
-  - Discord Webhook への画像付き通知
-  - 通知済みノートの管理（重複通知防止）
-- 対象ユーザー: 開発者、Misskey/Discord 利用者
+Project rules (language, commands, architecture, conventions, security) are in [AGENTS.md](../AGENTS.md). Write review comments in English.
 
-## 共通ルール
-- 会話は日本語で行う。
-- PR とコミットは [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) に従う。
-  - `<type>(<scope>): <description>` 形式
-  - `<description>` は日本語で記載
-- ブランチ命名は [Conventional Branch](https://conventional-branch.github.io) に従う。
-- 日本語と英数字の間には半角スペースを入れる。
+## Review focus
 
-## 技術スタック
-- 言語: TypeScript
-- 実行環境: Node.js。TypeScript の実行には tsx を使用する（`pnpm start` / `pnpm dev`）。
-- HTTP 通信: ネイティブの `fetch` を使用する（外部の HTTP クライアントライブラリは導入していない）。
-- ライブラリ: puppeteer-core (スクリーンショット), @book000/node-utils (Logger)
-- テスト: Vitest
-- パッケージマネージャー: pnpm
-
-## 開発コマンド
-```bash
-# 依存関係のインストール
-pnpm install
-
-# 開発（ホットリロードあり）
-pnpm dev
-
-# 実行
-pnpm start
-
-# テスト
-pnpm test
-
-# Lint チェック（prettier / eslint / tsc）
-pnpm lint
-
-# Lint 自動修正
-pnpm fix
-```
-
-## コーディング規約
-- TypeScript の `skipLibCheck` を使用したエラー回避は禁止。
-- 関数やインターフェースには JSDoc 形式の docstring を日本語で記載することを推奨する（新規追加時は付与）。
-- 命名規則はプロジェクトの既存のコード（camelCase）に従う。
-- HTTP 通信は `fetch` を用いる。新たに axios 等の HTTP クライアントを追加しない。
-
-## レビュー時の重点確認事項
-- Misskey API / Discord Webhook のレスポンスに対するエラーハンドリングが実装されているか。
-- Puppeteer で起動したブラウザが確実にクローズされ、リソースがリークしていないか。
-- 機密情報（トークン、Webhook URL 等）がログや例外メッセージに漏れていないか。
-- ロジックを変更・追加した場合、対応する Vitest テストが追加/更新されているか。
-
-## セキュリティ / 機密情報
-- `INSTANCE_DOMAIN`, `LIST_ID`, `API_ACCESS_TOKEN`, `DISCORD_WEBHOOK_URL` などの機密情報をコードに含めたり、コミットしたりしない。
-- ログに機密情報を出力しない。
-
-## ドキュメント更新
-- プロジェクトの構成や依存関係に変更があった場合は `README.md` を更新する。
+- Are errors from the Misskey API and Discord webhook handled?
+- Is the Puppeteer browser (and every page) always closed, with no resource leaks?
+- Do logs or exception messages leak secrets (tokens, webhook URL)?
+- Were Vitest tests added or updated when logic changed?
+- Is `README.md` updated when structure or dependencies change?
