@@ -31,9 +31,9 @@ CI (`.github/workflows/nodejs-ci-pnpm.yml`) uses the shared `book000/templates` 
 - `src/process-notes.ts`: `processNotes(notes, deps)`, the per-note loop. Skips notes younger than 5 minutes, screenshots, sends to Discord, and records the note as notified only after a successful send. A per-note screenshot or Discord failure leaves the note unsent so it is retried on the next loop iteration and does not block later notes; a `DiscordApiError` with `abortBatch` (HTTP 429, 401, 403, 404 or a network failure) stops the run.
 - `src/misskey.ts`: Misskey API types.
 - `src/discord.ts`: Discord webhook client (sends via `fetch`). Throws `DiscordApiError` with `status`, `abortBatch` (true for HTTP 429, 401, 403, 404 and network failures) and `retryAfterMs`.
-- `src/notified.ts`: notified-note store at `data/notified.json` (override with `NOTIFIED_PATH`; the Docker image sets `/data/notified.json`). On the first run (no file) existing notes are recorded without notifying.
+- `src/notified.ts`: notified-note store at `data/notified.json` (override with `NOTIFIED_PATH`; the Docker image sets `/data/notified.json`). On the first run (no file) existing notes are recorded without notifying. The parent directory is created on write. Writes are atomic (temporary `.tmp` file, fsync, rename over the ledger). An already-recorded ID is not written twice. An invalid ledger (empty, malformed JSON, or not an array of strings) is never repaired automatically: the run fails with an `Invalid notified ledger at <path>: ...` error and the operator must repair the file or delete it (deleting makes the next run a first run, which records current notes without notifying).
 - `src/utils.ts`: Puppeteer (`puppeteer-core`) launch with retry, main-article selection, CW/sensitive-media reveal and screenshot capture.
-- `src/utils.test.ts`, `src/discord.test.ts`, `src/process-notes.test.ts`: Vitest tests (`src/*.test.ts`).
+- `src/utils.test.ts`, `src/discord.test.ts`, `src/process-notes.test.ts`, `src/notified.test.ts`: Vitest tests (`src/*.test.ts`).
 
 Configuration is via environment variables: `INSTANCE_DOMAIN`, `LIST_ID`, `API_ACCESS_TOKEN`, `DISCORD_WEBHOOK_URL`, and optionally `NOTIFIED_PATH`.
 
