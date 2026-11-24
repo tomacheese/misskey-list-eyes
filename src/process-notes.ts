@@ -1,4 +1,5 @@
 import { Browser } from 'puppeteer-core'
+import fs from 'node:fs'
 import { Logger } from '@book000/node-utils'
 import { DiscordApi, DiscordApiError } from './discord'
 import { NotesUserListTimelineResponse } from './misskey'
@@ -110,6 +111,12 @@ export async function processNotes(
         `⚠️ Failed to send to Discord (note skipped): ${url} (${message})`
       )
       continue
+    } finally {
+      try {
+        fs.rmSync(imagePath, { force: true })
+      } catch {
+        logger.warn('⚠️ Failed to remove screenshot')
+      }
     }
 
     Notified.addNotified(noteId)

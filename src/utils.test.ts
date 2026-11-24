@@ -185,7 +185,7 @@ describe('waitForNoteElement', () => {
     // On final failure, take the full-page debug screenshot exactly once
     expect(screenshot).toHaveBeenCalledTimes(1)
     expect(screenshot).toHaveBeenCalledWith({
-      path: '/data/noteId2.full.png',
+      path: '/data/latest.full.png',
       fullPage: true
     })
   })
