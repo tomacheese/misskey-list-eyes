@@ -250,7 +250,7 @@ async function waitForNoteElement(
     }
 
     if (isLastAttempt) {
-      const imageFullPath = `/data/${noteId}.full.png` as const
+      const imageFullPath = '/data/latest.full.png' as const
       await page
         .screenshot({ path: imageFullPath, fullPage: true })
         .catch(() => {
@@ -364,7 +364,16 @@ async function captureNote(
   await article.evaluate((element) => {
     element.scrollIntoView()
   })
-  await article.screenshot({ path: imagePath })
+  try {
+    await article.screenshot({ path: imagePath })
+  } catch (error) {
+    try {
+      fs.rmSync(imagePath, { force: true })
+    } catch {
+      Logger.configure('captureNote').warn('⚠️ Failed to remove screenshot')
+    }
+    throw error
+  }
 
   return imagePath
 }

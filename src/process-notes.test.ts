@@ -1,4 +1,7 @@
 import type { Browser } from 'puppeteer-core'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
 import type { Logger } from '@book000/node-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DiscordApi, DiscordApiError } from './discord'
@@ -66,6 +69,34 @@ describe('processNotes', () => {
     vi.useRealTimers()
     vi.clearAllMocks()
   })
+
+  it.each(['success', 'failure', 'abort'])(
+    'removes the screenshot after a send %s',
+    async (outcome) => {
+      const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'screenshots-'))
+      const imagePath = path.join(directory, 'note.png')
+      fs.writeFileSync(imagePath, 'image')
+      vi.mocked(downloadNotePreviewImage).mockResolvedValue({ imagePath })
+      const sendMessage = vi.fn().mockImplementation(() => {
+        expect(fs.existsSync(imagePath)).toBe(true)
+        if (outcome !== 'success') {
+          throw new DiscordApiError('send failed', {
+            abortBatch: outcome === 'abort'
+          })
+        }
+        return Promise.resolve()
+      })
+
+      try {
+        await run([makeNote('a')], sendMessage)
+        expect(sendMessage).toHaveBeenCalledOnce()
+        expect(fs.existsSync(imagePath)).toBe(false)
+        expect(addNotified).toHaveBeenCalledTimes(outcome === 'success' ? 1 : 0)
+      } finally {
+        fs.rmSync(directory, { recursive: true, force: true })
+      }
+    }
+  )
 
   it.each([
     [
