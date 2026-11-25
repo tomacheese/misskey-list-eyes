@@ -234,9 +234,13 @@ describe('initPuppeteerBrowser', () => {
       expect.objectContaining({ timeout: 60_000 })
     )
     const options = launchMock.mock.calls[0][0]
-    expect(options?.args).not.toContain('--no-sandbox')
-    expect(options?.args).not.toContain('--disable-setuid-sandbox')
-    expect(options?.args).not.toContain('--no-zygote')
+    expect(options?.args).toEqual(
+      expect.arrayContaining([
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--no-zygote'
+      ])
+    )
   })
 
   it('retries and returns the Browser when launch succeeds after a transient failure', async () => {
