@@ -20,13 +20,17 @@ services:
       - type: bind
         source: ./data
         target: /data
+    security_opt:
+      - seccomp=./chromium-seccomp.json
     env_file:
       - .env
     init: true
     restart: always
 ```
 
-Finally, start it with `docker compose up -d`. The container checks the list every 5 minutes. Notified note IDs are stored in `/data/notified.json`, so keep the `/data` volume. The first run only records the current notes without notifying.
+Download [chromium-seccomp.json](https://raw.githubusercontent.com/tomacheese/misskey-list-eyes/master/chromium-seccomp.json) next to the Compose file. The profile is based on [Moby's default seccomp profile](https://github.com/moby/profiles/blob/main/seccomp/default.json), distributed under the [Apache License 2.0](chromium-seccomp.LICENSE), and permits the namespace operations Chromium needs for its sandbox. The host must support unprivileged user namespaces. The additional namespace syscalls weaken Docker's default seccomp restrictions for the container.
+
+Create `./data` and ensure it and any existing files are writable by UID and GID 1000, which the container uses. Preserve the existing ledger when migrating from an earlier root-running container. Finally, start it with `docker compose up -d`. The container checks the list every 5 minutes. Notified note IDs are stored in `/data/notified.json`, so keep the `/data` volume. The first run only records the current notes without notifying.
 
 ## Configuration
 

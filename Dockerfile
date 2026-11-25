@@ -50,13 +50,15 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/src ./src
 
 COPY entrypoint.sh .
-RUN chmod +x entrypoint.sh
+RUN chmod +x entrypoint.sh && mkdir -p /data /app/logs && chown chrome:chrome /data /app/logs
 
 ENV TZ=Asia/Tokyo
 ENV DISPLAY=:99
 ENV NODE_ENV=production
 ENV CHROMIUM_PATH=/usr/bin/chromium-browser
 ENV NOTIFIED_PATH=/data/notified.json
+
+USER chrome
 
 ENTRYPOINT ["tini", "--"]
 CMD ["/app/entrypoint.sh"]
