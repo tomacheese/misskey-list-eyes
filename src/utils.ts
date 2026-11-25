@@ -98,12 +98,9 @@ const PUPPETEER_LAUNCH_RETRY_DELAY_MS = 10_000
  */
 export async function initPuppeteerBrowser(): Promise<Browser> {
   const puppeteerArguments = [
-    '--no-sandbox',
-    '--disable-setuid-sandbox',
     '--disable-dev-shm-usage',
     '--disable-accelerated-2d-canvas',
     '--no-first-run',
-    '--no-zygote',
     '--disable-gpu',
     '--lang=ja',
     '--window-size=1920,1080'

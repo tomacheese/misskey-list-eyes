@@ -5,6 +5,8 @@ services:
     build: .
     volumes:
       - ./data:/data
+    security_opt:
+      - seccomp=./chromium-seccomp.json
     env_file:
       - .env
     init: true
